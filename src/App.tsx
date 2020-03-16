@@ -47,9 +47,11 @@ const App: React.FC = () => {
           if (window.tabs === undefined) {
             return null;
           }
+
           if (windows.length === 1) {
             return <TabList tabs={window.tabs} />;
           }
+
           return (
             <React.Fragment>
               <p className={styles.windowIndex}>Window {index + 1}</p>
