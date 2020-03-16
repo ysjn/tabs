@@ -29,6 +29,9 @@ const styles = {
   favicon: css`
     width: 16px;
     height: 16px;
+    text-indent: 100%;
+    white-space: nowrap;
+    overflow: hidden;
   `,
   title: css`
     padding: 10px 0 23px;
