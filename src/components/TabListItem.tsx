@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { css, cx } from "emotion";
 
 // Icons
@@ -114,6 +114,12 @@ const TabListItem: React.FC<Props> = props => {
     `
   );
 
+  const [isFaviconAvailable, setIsFaviconAvailable] = useState(true);
+  const faviconNotAvailable = useCallback(
+    () => setIsFaviconAvailable(false),
+    []
+  );
+
   // show tab on hover
   const onHover = useCallback(() => {
     if (!props.id) {
@@ -151,11 +157,12 @@ const TabListItem: React.FC<Props> = props => {
     <li className={style} onMouseEnter={onHover}>
       <div onClick={onClick}>
         <div className={styles.columnLeft}>
-          {props.favIconUrl ? (
+          {props.favIconUrl && isFaviconAvailable ? (
             <img
               className={styles.favicon}
               src={props.favIconUrl}
               alt={`favicon for ${props.title}`}
+              onError={faviconNotAvailable}
             />
           ) : (
             <i className="gg-file" />
