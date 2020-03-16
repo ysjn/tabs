@@ -2,14 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <!--
       manifest.json provides metadata used when your web app is installed on a
       user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
@@ -24,7 +18,42 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <title>React App</title>
+    <title>Tabs</title>
+    <style>
+      :root {
+        --primary: #444;
+        --secondary: #999;
+        --bg: #e7eaed;
+        --hover: #f2f3f5;
+        --active: #fff;
+        --divider: #f7f7f7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --primary: #fff;
+          --secondary: #aaa;
+          --bg: #202124;
+          --hover: #2e2f33;
+          --active: #35363a;
+          --divider: #111;
+        }
+      }
+      html {
+        background-color: var(--bg);
+        color: var(--primary);
+        --ggs: 0.8;
+      }
+      ::-webkit-scrollbar {
+        overflow: hidden;
+        width: 5px;
+      }
+      ::-webkit-scrollbar:horizontal {
+        height: 5px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--divider);
+      }
+    </style>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

@@ -1,26 +1,36 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect, useCallback } from "react";
+import { css } from "emotion";
+import TabList from "./components/TabList";
 
-function App() {
+const style = css`
+  font-family: "Mplus 1p", HelveticaNeue, Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  overflow: auto;
+`;
+
+const App: React.FC = () => {
+  const [tabs, setTabs] = useState<chrome.tabs.Tab[]>([]);
+
+  const getTabs = useCallback(() => {
+    window.chrome.tabs.query({}, tabs => setTabs(tabs));
+  }, []);
+
+  useEffect(() => {
+    window.chrome.tabs.onCreated.addListener(getTabs);
+    window.chrome.tabs.onUpdated.addListener(getTabs);
+    window.chrome.tabs.onMoved.addListener(getTabs);
+    window.chrome.tabs.onSelectionChanged.addListener(getTabs);
+    window.chrome.tabs.onActiveChanged.addListener(getTabs);
+    window.chrome.tabs.onActivated.addListener(getTabs);
+    window.chrome.tabs.onHighlightChanged.addListener(getTabs);
+    window.chrome.tabs.onHighlighted.addListener(getTabs);
+    window.chrome.tabs.onRemoved.addListener(getTabs);
+  }, []);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <div className={style}>{tabs.length > 0 && <TabList tabs={tabs} />}</div>
   );
-}
+};
 
 export default App;
