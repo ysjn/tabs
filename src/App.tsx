@@ -17,6 +17,7 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    getTabs();
     window.chrome.tabs.onCreated.addListener(getTabs);
     window.chrome.tabs.onUpdated.addListener(getTabs);
     window.chrome.tabs.onMoved.addListener(getTabs);
