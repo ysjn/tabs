@@ -8,6 +8,11 @@ import "css.gg/icons/pin-bottom.css";
 import "css.gg/icons/file.css";
 
 const POPUP_URL = window.chrome.runtime.getURL("index.html");
+let POPUP_WINDOW_ID = 0;
+window.chrome.tabs.query({ url: POPUP_URL }, tab => {
+  POPUP_WINDOW_ID = tab[0].windowId;
+});
+let lastFocusedWinId = 0;
 
 const styles = {
   default: css`
@@ -126,7 +131,17 @@ const TabListItem: React.FC<Props> = props => {
       return;
     }
     window.chrome.tabs.update(props.id, { active: true });
-    // window.chrome.windows.update(props.extensionTab.windowId, {focused: true});
+
+    // if the window has not been focused on last update,
+    // focus window again to bring to front
+    if (lastFocusedWinId === props.windowId) {
+      return;
+    }
+
+    window.chrome.windows.update(props.windowId, { focused: true }, () => {
+      window.chrome.windows.update(POPUP_WINDOW_ID, { focused: true });
+      lastFocusedWinId = props.windowId;
+    });
   }, []);
 
   // make clicked tab active
