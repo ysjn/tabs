@@ -2,18 +2,29 @@ import React, { useState, useEffect, useCallback } from "react";
 import { css } from "emotion";
 import TabList from "./components/TabList";
 
-const style = css`
-  font-family: "Mplus 1p", HelveticaNeue, Arial, sans-serif;
-  font-size: 13px;
-  line-height: 1.4;
-  overflow: auto;
-`;
+const styles = {
+  app: css`
+    font-family: "Mplus 1p", HelveticaNeue, Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+  `,
+  windowIndex: css`
+    padding: 10px;
+    background-color: var(--divider);
+  `
+};
 
 const App: React.FC = () => {
-  const [tabs, setTabs] = useState<chrome.tabs.Tab[]>([]);
+  const [windows, setWindows] = useState<chrome.windows.Window[]>([]);
 
   const getTabs = useCallback(() => {
-    window.chrome.tabs.query({}, tabs => setTabs(tabs));
+    window.chrome.windows.getAll(
+      { populate: true, windowTypes: ["normal"] },
+      windowsArray => setWindows(windowsArray)
+    );
   }, []);
 
   useEffect(() => {
@@ -30,7 +41,23 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <div className={style}>{tabs.length > 0 && <TabList tabs={tabs} />}</div>
+    <div className={styles.app}>
+      {windows.length > 0 &&
+        windows.map((window, index) => {
+          if (window.tabs === undefined) {
+            return null;
+          }
+          if (windows.length === 1) {
+            return <TabList tabs={window.tabs} />;
+          }
+          return (
+            <React.Fragment>
+              <p className={styles.windowIndex}>Window {index + 1}</p>
+              <TabList tabs={window.tabs} />
+            </React.Fragment>
+          );
+        })}
+    </div>
   );
 };
 
