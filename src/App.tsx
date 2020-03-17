@@ -28,7 +28,7 @@ const App: React.FC = () => {
       { populate: true, windowTypes: ["normal"] },
       windowsArray => setWindows(windowsArray)
     );
-  }, []);
+  }, [setWindows]);
 
   useEffect(() => {
     getTabs();

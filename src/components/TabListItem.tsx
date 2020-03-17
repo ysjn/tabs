@@ -90,10 +90,18 @@ interface Props extends chrome.tabs.Tab {
 }
 
 const TabListItem: React.FC<Props> = props => {
+  const [{ isDragging }, dragRef] = useDrag({
+    item: { type: "tab", windowId: props.windowId, tabId: props.id },
+    collect: monitor => ({
+      isDragging: monitor.isDragging()
+    })
+  });
+
   const style = cx(
     styles.default,
     css`
-      ${props.selected ? "background-color: var(--active)" : ""}
+      ${props.selected ? "background-color: var(--active);" : ""}
+      ${isDragging ? "cursor: grabbing;" : ""}
     `
   );
   styles.columnLeft = cx(
@@ -120,10 +128,9 @@ const TabListItem: React.FC<Props> = props => {
   );
 
   const [isFaviconAvailable, setIsFaviconAvailable] = useState(true);
-  const faviconNotAvailable = useCallback(
-    () => setIsFaviconAvailable(false),
-    []
-  );
+  const faviconNotAvailable = useCallback(() => setIsFaviconAvailable(false), [
+    setIsFaviconAvailable
+  ]);
 
   // show tab on hover
   const onHover = useCallback(() => {
@@ -142,7 +149,7 @@ const TabListItem: React.FC<Props> = props => {
       window.chrome.windows.update(POPUP_WINDOW_ID, { focused: true });
       lastFocusedWinId = props.windowId;
     });
-  }, []);
+  }, [props]);
 
   // make clicked tab active
   const onClick = useCallback(() => {
@@ -153,7 +160,7 @@ const TabListItem: React.FC<Props> = props => {
       window.chrome.windows.update(props.windowId, { focused: true });
     });
     setTimeout(() => window.close(), 0);
-  }, []);
+  }, [props]);
 
   // close tab
   const handleClose = useCallback(() => {
@@ -161,14 +168,7 @@ const TabListItem: React.FC<Props> = props => {
       return;
     }
     window.chrome.tabs.remove(props.id);
-  }, []);
-
-  const [{ isDragging }, dragRef] = useDrag({
-    item: { type: "tab", windowId: props.windowId, tabId: props.id },
-    collect: monitor => ({
-      isDragging: monitor.isDragging()
-    })
-  });
+  }, [props]);
 
   // do not include popup window as tab
   if (props.url && props.url.match(POPUP_URL)) {
