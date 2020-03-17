@@ -119,13 +119,14 @@ const TabListItem: React.FC<Props> = props => {
       color: var(--secondary);
       z-index: 200;
 
-      ${!props.pinned
-        ? `
-        &:hover {
-          background-color: var(--bg);
-          color: #f77;
-        }`
-        : ".gg-pin-alt { top: 5px; }"}
+      &:hover {
+        background-color: var(--bg);
+        color: #f77;
+      }
+
+      .gg-pin-bottom {
+        top: 4px;
+      }
     `
   );
 
@@ -172,6 +173,28 @@ const TabListItem: React.FC<Props> = props => {
     window.chrome.tabs.remove(props.id);
   }, [props]);
 
+  // close unpin
+  const handleUnpin = useCallback(() => {
+    if (!props.id) {
+      return;
+    }
+    window.chrome.tabs.update(props.id, { pinned: false });
+  }, [props]);
+
+  const [isHovered, setIsHovered] = useState(false);
+  const onMouseEnter = useCallback(() => {
+    if (!props.pinned) {
+      return;
+    }
+    setIsHovered(true);
+  }, [props]);
+  const onMouseLeave = useCallback(() => {
+    if (!props.pinned) {
+      return;
+    }
+    setIsHovered(false);
+  }, [props]);
+
   // do not include popup window as tab
   if (props.url && props.url.match(POPUP_URL)) {
     return null;
@@ -198,9 +221,19 @@ const TabListItem: React.FC<Props> = props => {
       </div>
       <div
         className={styles.columnRight}
-        onClick={props.pinned ? undefined : handleClose}
+        onClick={props.pinned ? handleUnpin : handleClose}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
       >
-        <i className={props.pinned ? "gg-pin-alt" : "gg-close"} />
+        <i
+          className={
+            props.pinned && isHovered
+              ? "gg-pin-alt"
+              : props.pinned
+              ? "gg-pin-bottom"
+              : "gg-close"
+          }
+        />
       </div>
       {!isDragging && !props.selected && <DropZone bottom {...dropZoneProps} />}
     </li>
