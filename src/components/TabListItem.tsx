@@ -97,6 +97,8 @@ const TabListItem: React.FC<Props> = props => {
     })
   });
 
+  const dropZoneProps = { windowId: props.windowId, tabIndex: props.index };
+
   const style = cx(
     styles.default,
     css`
@@ -177,9 +179,7 @@ const TabListItem: React.FC<Props> = props => {
 
   return (
     <li className={style} onMouseEnter={onHover} ref={dragRef}>
-      {!isDragging && !props.selected && (
-        <DropZone windowId={props.windowId} tabIndex={props.index} top />
-      )}
+      {!isDragging && !props.selected && <DropZone top {...dropZoneProps} />}
       <div onClick={onClick}>
         <div className={styles.columnLeft}>
           {props.favIconUrl && isFaviconAvailable ? (
@@ -202,9 +202,7 @@ const TabListItem: React.FC<Props> = props => {
       >
         <i className={props.pinned ? "gg-pin-alt" : "gg-close"} />
       </div>
-      {!isDragging && !props.selected && (
-        <DropZone windowId={props.windowId} tabIndex={props.index} bottom />
-      )}
+      {!isDragging && !props.selected && <DropZone bottom {...dropZoneProps} />}
     </li>
   );
 };
