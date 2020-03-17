@@ -8,6 +8,7 @@ const styles = {
     left: 0;
     right: 0;
     height: 50%;
+    pointer-events: none;
     z-index: 100;
   `,
   top: css`
