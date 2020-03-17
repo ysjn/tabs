@@ -1,5 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { css, cx } from "emotion";
+import { useDrag } from "react-dnd";
+import DropZone from "./DropZone";
 
 // Icons
 import "css.gg/icons/close.css";
@@ -27,9 +29,6 @@ const styles = {
     &:hover {
       background-color: var(--hover);
     }
-  `,
-  isPinned: css`
-    opacity: 0.5;
   `,
   favicon: css`
     width: 16px;
@@ -95,8 +94,7 @@ const TabListItem: React.FC<Props> = props => {
     styles.default,
     css`
       ${props.selected ? "background-color: var(--active)" : ""}
-    `,
-    { [styles.isPinned]: props.pinned }
+    `
   );
   styles.columnLeft = cx(
     styles.column,
@@ -108,6 +106,8 @@ const TabListItem: React.FC<Props> = props => {
     styles.column,
     css`
       right: 0;
+      color: var(--secondary);
+      z-index: 200;
 
       ${!props.pinned
         ? `
@@ -163,13 +163,23 @@ const TabListItem: React.FC<Props> = props => {
     window.chrome.tabs.remove(props.id);
   }, []);
 
+  const [{ isDragging }, dragRef] = useDrag({
+    item: { type: "tab", windowId: props.windowId, tabId: props.id },
+    collect: monitor => ({
+      isDragging: monitor.isDragging()
+    })
+  });
+
   // do not include popup window as tab
   if (props.url && props.url.match(POPUP_URL)) {
     return null;
   }
 
   return (
-    <li className={style} onMouseEnter={onHover}>
+    <li className={style} onMouseEnter={onHover} ref={dragRef}>
+      {!isDragging && (
+        <DropZone windowId={props.windowId} tabIndex={props.index} top />
+      )}
       <div onClick={onClick}>
         <div className={styles.columnLeft}>
           {props.favIconUrl && isFaviconAvailable ? (
@@ -192,6 +202,9 @@ const TabListItem: React.FC<Props> = props => {
       >
         <i className={props.pinned ? "gg-pin-alt" : "gg-close"} />
       </div>
+      {!isDragging && (
+        <DropZone windowId={props.windowId} tabIndex={props.index} bottom />
+      )}
     </li>
   );
 };

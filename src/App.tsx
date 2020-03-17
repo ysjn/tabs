@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { css } from "emotion";
+import { DndProvider } from "react-dnd";
+import Backend from "react-dnd-html5-backend";
+
 import TabList from "./components/TabList";
 
 const styles = {
@@ -42,23 +45,25 @@ const App: React.FC = () => {
 
   return (
     <div className={styles.app}>
-      {windows.length > 0 &&
-        windows.map((window, index) => {
-          if (window.tabs === undefined) {
-            return null;
-          }
+      <DndProvider backend={Backend}>
+        {windows.length > 0 &&
+          windows.map((window, index) => {
+            if (window.tabs === undefined) {
+              return null;
+            }
 
-          if (windows.length === 1) {
-            return <TabList tabs={window.tabs} />;
-          }
+            if (windows.length === 1) {
+              return <TabList tabs={window.tabs} />;
+            }
 
-          return (
-            <React.Fragment>
-              <p className={styles.windowIndex}>Window {index + 1}</p>
-              <TabList tabs={window.tabs} />
-            </React.Fragment>
-          );
-        })}
+            return (
+              <React.Fragment>
+                <p className={styles.windowIndex}>Window {index + 1}</p>
+                <TabList tabs={window.tabs} />
+              </React.Fragment>
+            );
+          })}
+      </DndProvider>
     </div>
   );
 };
