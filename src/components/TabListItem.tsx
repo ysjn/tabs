@@ -177,7 +177,7 @@ const TabListItem: React.FC<Props> = props => {
 
   return (
     <li className={style} onMouseEnter={onHover} ref={dragRef}>
-      {!isDragging && (
+      {!isDragging && !props.selected && (
         <DropZone windowId={props.windowId} tabIndex={props.index} top />
       )}
       <div onClick={onClick}>
@@ -202,7 +202,7 @@ const TabListItem: React.FC<Props> = props => {
       >
         <i className={props.pinned ? "gg-pin-alt" : "gg-close"} />
       </div>
-      {!isDragging && (
+      {!isDragging && !props.selected && (
         <DropZone windowId={props.windowId} tabIndex={props.index} bottom />
       )}
     </li>
