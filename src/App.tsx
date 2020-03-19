@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { GlobalContext, initialGlobalState } from "./components/GlobalContext";
 import { css } from "emotion";
 import { DndProvider } from "react-dnd";
 import Backend from "react-dnd-html5-backend";
@@ -21,6 +22,7 @@ const styles = {
 };
 
 const App: React.FC = () => {
+  const [state, setState] = useState(initialGlobalState);
   const [windows, setWindows] = useState<chrome.windows.Window[]>([]);
 
   const getTabs = useCallback(() => {
@@ -41,30 +43,33 @@ const App: React.FC = () => {
     window.chrome.tabs.onHighlightChanged.addListener(getTabs);
     window.chrome.tabs.onHighlighted.addListener(getTabs);
     window.chrome.tabs.onRemoved.addListener(getTabs);
-  }, []);
+    window.chrome.windows.onRemoved.addListener(getTabs);
+  }, []); // @ts-ignore react-hooks/exhaustive-deps
 
   return (
-    <div className={styles.app}>
-      <DndProvider backend={Backend}>
-        {windows.length > 0 &&
-          windows.map((window, index) => {
-            if (window.tabs === undefined) {
-              return null;
-            }
+    <GlobalContext.Provider value={[state, setState]}>
+      <div className={styles.app}>
+        <DndProvider backend={Backend}>
+          {windows.length > 0 &&
+            windows.map((window, index) => {
+              if (window.tabs === undefined) {
+                return null;
+              }
 
-            if (windows.length === 1) {
-              return <TabList tabs={window.tabs} />;
-            }
+              if (windows.length === 1) {
+                return <TabList tabs={window.tabs} />;
+              }
 
-            return (
-              <React.Fragment>
-                <p className={styles.windowIndex}>Window {index + 1}</p>
-                <TabList tabs={window.tabs} />
-              </React.Fragment>
-            );
-          })}
-      </DndProvider>
-    </div>
+              return (
+                <React.Fragment>
+                  <p className={styles.windowIndex}>Window {index + 1}</p>
+                  <TabList tabs={window.tabs} />
+                </React.Fragment>
+              );
+            })}
+        </DndProvider>
+      </div>
+    </GlobalContext.Provider>
   );
 };
 

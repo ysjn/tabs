@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
+import { useGlobal } from "./GlobalContext";
 import { css, cx } from "emotion";
 import { useDrag } from "react-dnd";
 import DropZone from "./DropZone";
@@ -20,7 +21,6 @@ const styles = {
   default: css`
     position: relative;
     display: block;
-    max-width: 700px;
     padding: 0 41px;
     border-bottom: 1px solid var(--divider);
     cursor: pointer;
@@ -90,12 +90,22 @@ interface Props extends chrome.tabs.Tab {
 }
 
 const TabListItem: React.FC<Props> = props => {
-  const [{ isDragging }, dragRef] = useDrag({
+  const { globalState, setGlobalState } = useGlobal();
+
+  const [{ isDragging, draggingId }, dragRef] = useDrag({
     item: { type: "tab", windowId: props.windowId, tabId: props.id },
     collect: monitor => ({
-      isDragging: monitor.isDragging()
+      isDragging: monitor.isDragging(),
+      draggingId: props.id
     })
   });
+
+  useEffect(() => {
+    setGlobalState({ isDragging, draggingId });
+  }, [isDragging]); // @ts-ignore react-hooks/exhaustive-deps
+
+  const isDraggingOther =
+    globalState.isDragging && globalState.draggingId !== props.id;
 
   const dropZoneProps = { windowId: props.windowId, tabIndex: props.index };
 
@@ -202,7 +212,7 @@ const TabListItem: React.FC<Props> = props => {
 
   return (
     <li className={style} onMouseEnter={onHover} ref={dragRef}>
-      {!isDragging && !props.selected && <DropZone top {...dropZoneProps} />}
+      {isDraggingOther && <DropZone top {...dropZoneProps} />}
       <div onClick={onClick}>
         <div className={styles.columnLeft}>
           {props.favIconUrl && isFaviconAvailable ? (
@@ -235,7 +245,7 @@ const TabListItem: React.FC<Props> = props => {
           }
         />
       </div>
-      {!isDragging && !props.selected && <DropZone bottom {...dropZoneProps} />}
+      {isDraggingOther && <DropZone bottom {...dropZoneProps} />}
     </li>
   );
 };
