@@ -21,30 +21,43 @@ const styles = {
   `
 };
 
+const events = [
+  "onCreated",
+  "onUpdated",
+  "onMoved",
+  "onSelectionChanged",
+  "onActiveChanged",
+  "onActivated",
+  "onHighlightChanged",
+  "onHighlighted",
+  "onRemoved"
+];
+
+interface IIndexable {
+  [key: string]: any;
+}
+
 const App: React.FC = () => {
   const [state, setState] = useState(initialGlobalState);
   const [windows, setWindows] = useState<chrome.windows.Window[]>([]);
 
   const getTabs = useCallback(() => {
-    window.chrome.windows.getAll(
-      { populate: true, windowTypes: ["normal"] },
-      windowsArray => setWindows(windowsArray)
+    window.chrome.windows.getAll({ populate: true, windowTypes: ["normal"] }, windowsArray =>
+      setWindows(windowsArray)
     );
   }, [setWindows]);
 
   useEffect(() => {
     getTabs();
-    window.chrome.tabs.onCreated.addListener(getTabs);
-    window.chrome.tabs.onUpdated.addListener(getTabs);
-    window.chrome.tabs.onMoved.addListener(getTabs);
-    window.chrome.tabs.onSelectionChanged.addListener(getTabs);
-    window.chrome.tabs.onActiveChanged.addListener(getTabs);
-    window.chrome.tabs.onActivated.addListener(getTabs);
-    window.chrome.tabs.onHighlightChanged.addListener(getTabs);
-    window.chrome.tabs.onHighlighted.addListener(getTabs);
-    window.chrome.tabs.onRemoved.addListener(getTabs);
+
+    events.map(event => (window.chrome.tabs as IIndexable)[event].addListener(getTabs));
     window.chrome.windows.onRemoved.addListener(getTabs);
-  }, []); // @ts-ignore react-hooks/exhaustive-deps
+
+    return () => {
+      events.map(event => (window.chrome.tabs as IIndexable)[event].removeListener(getTabs));
+      window.chrome.windows.onRemoved.removeListener(getTabs);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <GlobalContext.Provider value={[state, setState]}>

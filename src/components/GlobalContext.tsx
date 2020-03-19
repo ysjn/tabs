@@ -10,9 +10,10 @@ export const initialGlobalState = {
   draggingId: 0
 };
 
-export const GlobalContext = React.createContext<
-  [State, (state: State) => void]
->([initialGlobalState, () => {}]);
+export const GlobalContext = React.createContext<[State, (state: State) => void]>([
+  initialGlobalState,
+  () => {}
+]);
 
 export const useGlobal = () => {
   const [globalState, setState] = React.useContext(GlobalContext);

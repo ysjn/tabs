@@ -1,14 +1,11 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import { useGlobal } from "./GlobalContext";
 import { css, cx } from "emotion";
 import { useDrag } from "react-dnd";
 import DropZone from "./DropZone";
 
-// Icons
-import "css.gg/icons/close.css";
-import "css.gg/icons/pin-alt.css";
-import "css.gg/icons/pin-bottom.css";
-import "css.gg/icons/file.css";
+import TabListItemMenu from "./TabListItemMenu";
+import TabListItemFavIcon from "./TabListItemFavIcon";
 
 const POPUP_URL = window.chrome.runtime.getURL("index.html");
 let POPUP_WINDOW_ID = 0;
@@ -30,13 +27,6 @@ const styles = {
       background-color: var(--hover);
     }
   `,
-  favicon: css`
-    width: 16px;
-    height: 16px;
-    text-indent: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-  `,
   title: css`
     padding: 10px 0 23px;
   `,
@@ -53,18 +43,7 @@ const styles = {
     box-sizing: border-box;
     overflow: hidden;
     pointer-events: none;
-  `,
-  column: css`
-    position: absolute;
-    top: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 41px;
-    height: 100%;
-  `,
-  columnLeft: "",
-  columnRight: ""
+  `
 };
 
 interface Props extends chrome.tabs.Tab {
@@ -102,11 +81,9 @@ const TabListItem: React.FC<Props> = props => {
 
   useEffect(() => {
     setGlobalState({ isDragging, draggingId });
-  }, [isDragging]); // @ts-ignore react-hooks/exhaustive-deps
+  }, [isDragging]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isDraggingOther =
-    globalState.isDragging && globalState.draggingId !== props.id;
-
+  const isDraggingOther = globalState.isDragging && globalState.draggingId !== props.id;
   const dropZoneProps = { windowId: props.windowId, tabIndex: props.index };
 
   const style = cx(
@@ -116,37 +93,9 @@ const TabListItem: React.FC<Props> = props => {
       ${isDragging ? "cursor: grabbing;" : ""}
     `
   );
-  styles.columnLeft = cx(
-    styles.column,
-    css`
-      left: 0;
-    `
-  );
-  styles.columnRight = cx(
-    styles.column,
-    css`
-      right: 0;
-      color: var(--secondary);
-      z-index: 200;
-
-      &:hover {
-        background-color: var(--bg);
-        color: #f77;
-      }
-
-      .gg-pin-bottom {
-        top: 4px;
-      }
-    `
-  );
-
-  const [isFaviconAvailable, setIsFaviconAvailable] = useState(true);
-  const faviconNotAvailable = useCallback(() => setIsFaviconAvailable(false), [
-    setIsFaviconAvailable
-  ]);
 
   // show tab on hover
-  const onHover = useCallback(() => {
+  const onMouseEnter = useCallback(() => {
     if (!props.id) {
       return;
     }
@@ -164,6 +113,10 @@ const TabListItem: React.FC<Props> = props => {
     });
   }, [props]);
 
+  // TODO: reActivate original tab onMouseLeave
+  // const onMouseLeave = useCallback(() => {
+  // }, [props]);
+
   // make clicked tab active
   const onClick = useCallback(() => {
     window.chrome.windows.get(props.windowId, win => {
@@ -175,76 +128,24 @@ const TabListItem: React.FC<Props> = props => {
     setTimeout(() => window.close(), 0);
   }, [props]);
 
-  // close tab
-  const handleClose = useCallback(() => {
-    if (!props.id) {
-      return;
-    }
-    window.chrome.tabs.remove(props.id);
-  }, [props]);
-
-  // close unpin
-  const handleUnpin = useCallback(() => {
-    if (!props.id) {
-      return;
-    }
-    window.chrome.tabs.update(props.id, { pinned: false });
-  }, [props]);
-
-  const [isHovered, setIsHovered] = useState(false);
-  const onMouseEnter = useCallback(() => {
-    if (!props.pinned) {
-      return;
-    }
-    setIsHovered(true);
-  }, [props]);
-  const onMouseLeave = useCallback(() => {
-    if (!props.pinned) {
-      return;
-    }
-    setIsHovered(false);
-  }, [props]);
-
   // do not include popup window as tab
   if (props.url && props.url.match(POPUP_URL)) {
     return null;
   }
 
   return (
-    <li className={style} onMouseEnter={onHover} ref={dragRef}>
+    <li className={style} onMouseEnter={onMouseEnter} ref={dragRef}>
       {isDraggingOther && <DropZone top {...dropZoneProps} />}
       <div onClick={onClick}>
-        <div className={styles.columnLeft}>
-          {props.favIconUrl && isFaviconAvailable ? (
-            <img
-              className={styles.favicon}
-              src={props.favIconUrl}
-              alt={`favicon for ${props.title}`}
-              onError={faviconNotAvailable}
-            />
-          ) : (
-            <i className="gg-file" />
-          )}
-        </div>
+        <TabListItemFavIcon
+          favIconUrl={props.favIconUrl}
+          title={props.title}
+          status={props.status}
+        />
         <p className={styles.title}>{props.title}</p>
         <p className={styles.url}>{props.url}</p>
       </div>
-      <div
-        className={styles.columnRight}
-        onClick={props.pinned ? handleUnpin : handleClose}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-      >
-        <i
-          className={
-            props.pinned && isHovered
-              ? "gg-pin-alt"
-              : props.pinned
-              ? "gg-pin-bottom"
-              : "gg-close"
-          }
-        />
-      </div>
+      <TabListItemMenu id={props.id} pinned={props.pinned} status={props.status} />
       {isDraggingOther && <DropZone bottom {...dropZoneProps} />}
     </li>
   );
