@@ -14,13 +14,13 @@ const styles = {
     top: 0;
   `,
   topActive: css`
-    box-shadow: 0 -2px var(--primary);
+    box-shadow: 0 -1px var(--primary), 0 1px var(--primary) inset;
   `,
   bottom: css`
     bottom: 0;
   `,
   bottomActive: css`
-    box-shadow: 0 2px var(--primary);
+    box-shadow: 0 1px var(--primary), 0 -1px var(--primary) inset;
   `
 };
 

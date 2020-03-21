@@ -47,15 +47,27 @@ const App: React.FC = () => {
     );
   }, [setWindows]);
 
+  const focusLastActiveTab = useCallback(event => {
+    event = event ? event : window.event;
+    const from = event.relatedTarget || event.toElement;
+    if (!from || from.nodeName == "HTML") {
+      window.chrome.storage.local.get("lastActiveTab", result => {
+        window.chrome.tabs.update(result.lastActiveTab.id, { active: true });
+      });
+    }
+  }, []);
+
   useEffect(() => {
     getTabs();
 
     events.map(event => (window.chrome.tabs as IIndexable)[event].addListener(getTabs));
     window.chrome.windows.onRemoved.addListener(getTabs);
+    window.document.addEventListener("mouseout", focusLastActiveTab);
 
     return () => {
       events.map(event => (window.chrome.tabs as IIndexable)[event].removeListener(getTabs));
       window.chrome.windows.onRemoved.removeListener(getTabs);
+      window.document.removeEventListener("mouseout", focusLastActiveTab);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

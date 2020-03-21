@@ -16,30 +16,20 @@ window.chrome.browserAction.onClicked.addListener(() => {
         return;
       }
 
-      const popupWidth = 400;
-      const left = win.left + win.width;
-      const top = 85;
-      const popupHeight = screen.height - top * 2;
-
-      window.chrome.windows.create({
-        url: "index.html",
-        type: "popup",
-        width: popupWidth,
-        height: popupHeight,
-        left: Math.round(left),
-        top: Math.round(top)
+      window.chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+        window.chrome.storage.local.set({ lastActiveTab: tabs[0] });
       });
 
-      // let popupWidth = screen.width;
-      // let popupHeight = 100;
-      // window.chrome.windows.create({
-      //   'url': 'index.html',
-      //   'type': 'popup',
-      //   'width': popupWidth,
-      //   'height': popupHeight,
-      //   'left': 0,
-      //   'top': 0
-      // });
+      const createData = {
+        url: "index.html",
+        type: "popup",
+        top: 85,
+        left: Math.round(win.left + win.width),
+        width: 400,
+        get height() { return Math.round(screen.height - this.top * 2); },
+      };
+
+      window.chrome.windows.create(createData);
     });
   });
 });

@@ -38,9 +38,6 @@ const TabListItemFavIcon: React.FC<Props> = props => {
           className={favIconStyle}
           src={props.favIconUrl}
           alt={`favicon for ${props.title}`}
-          onLoad={() => {
-            console.log("load");
-          }}
           onError={favIconNotAvailable}
         />
       ) : (

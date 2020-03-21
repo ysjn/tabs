@@ -99,6 +99,7 @@ const TabListItem: React.FC<Props> = props => {
     if (!props.id) {
       return;
     }
+
     window.chrome.tabs.update(props.id, { active: true });
 
     // if the window has not been focused on last update,
@@ -113,10 +114,6 @@ const TabListItem: React.FC<Props> = props => {
     });
   }, [props]);
 
-  // TODO: reActivate original tab onMouseLeave
-  // const onMouseLeave = useCallback(() => {
-  // }, [props]);
-
   // make clicked tab active
   const onClick = useCallback(() => {
     window.chrome.windows.get(props.windowId, win => {
@@ -125,7 +122,7 @@ const TabListItem: React.FC<Props> = props => {
       }
       window.chrome.windows.update(props.windowId, { focused: true });
     });
-    setTimeout(() => window.close(), 0);
+    setTimeout(window.close, 0);
   }, [props]);
 
   // do not include popup window as tab
