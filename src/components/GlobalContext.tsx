@@ -1,11 +1,17 @@
 import React from "react";
 
 interface State {
+  isShiftPressed: boolean;
+  isAltPressed: boolean;
+  isHighlighting: boolean;
   isDragging: boolean;
   draggingId: number;
 }
 
 export const initialGlobalState = {
+  isShiftPressed: false,
+  isAltPressed: false,
+  isHighlighting: false,
   isDragging: false,
   draggingId: 0
 };
@@ -21,7 +27,7 @@ export const useGlobal = () => {
   return {
     globalState,
     setGlobalState(state: {}) {
-      const newGlobalState = { ...globalState, ...state };
+      const newGlobalState = Object.assign(globalState, state);
       setState(newGlobalState);
     }
   };

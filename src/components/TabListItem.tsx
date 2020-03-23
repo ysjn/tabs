@@ -66,6 +66,7 @@ interface Props extends chrome.tabs.Tab {
   // url: "https://www.google.com/"
   // width: 1031
   // windowId: 12
+  windows: chrome.windows.Window[];
 }
 
 const TabListItem: React.FC<Props> = props => {
@@ -89,33 +90,49 @@ const TabListItem: React.FC<Props> = props => {
   const style = cx(
     styles.default,
     css`
-      ${props.selected ? "background-color: var(--active);" : ""}
+      ${props.active || props.highlighted ? "background-color: var(--active);" : ""}
       ${isDragging ? "cursor: grabbing;" : ""}
     `
   );
 
   // show tab on hover
-  const onMouseEnter = useCallback(() => {
-    if (!props.id) {
-      return;
-    }
+  const onMouseEnter = useCallback(
+    event => {
+      if (!props.id || globalState.isHighlighting || event.shiftKey) {
+        return;
+      }
 
-    window.chrome.tabs.update(props.id, { active: true });
+      window.chrome.tabs.update(props.id, { active: true });
 
-    // if the window has not been focused on last update,
-    // focus window again to bring to front
-    if (lastFocusedWinId === props.windowId) {
-      return;
-    }
+      // if the window has not been focused on last update,
+      // focus window again to bring to front
+      if (lastFocusedWinId === props.windowId) {
+        return;
+      }
 
-    window.chrome.windows.update(props.windowId, { focused: true }, () => {
-      window.chrome.windows.update(POPUP_WINDOW_ID, { focused: true });
-      lastFocusedWinId = props.windowId;
-    });
-  }, [props]);
+      window.chrome.windows.update(props.windowId, { focused: true }, () => {
+        window.chrome.windows.update(POPUP_WINDOW_ID, { focused: true });
+        lastFocusedWinId = props.windowId;
+      });
+    },
+    [props]
+  );
 
   // make clicked tab active
   const onClick = useCallback(() => {
+    // toggle highlight
+    if (globalState.isShiftPressed && props.id) {
+      window.chrome.tabs.update(props.id, { highlighted: !props.highlighted });
+
+      const isHighlighting = props.windows.some(window => {
+        return window.tabs && window.tabs.filter(tab => tab.highlighted).length > 1;
+      });
+      setGlobalState({ isHighlighting });
+
+      return;
+    }
+
+    // focus window and close popup
     window.chrome.windows.get(props.windowId, win => {
       if (win.focused) {
         return false;

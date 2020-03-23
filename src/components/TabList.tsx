@@ -3,6 +3,7 @@ import { css } from "emotion";
 import TabListItem from "./TabListItem";
 
 interface Props {
+  windows: chrome.windows.Window[];
   tabs: chrome.tabs.Tab[];
 }
 
@@ -16,7 +17,7 @@ const TabList: React.FC<Props> = props => {
     <div className={style}>
       <ul className="">
         {props.tabs.map((tab, index) => (
-          <TabListItem {...tab} key={index} />
+          <TabListItem windows={props.windows} {...tab} key={index} />
         ))}
       </ul>
     </div>
