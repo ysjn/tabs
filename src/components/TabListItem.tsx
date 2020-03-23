@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect } from "react";
-import { useGlobal } from "./GlobalContext";
+import React, { useCallback, useEffect, useContext } from "react";
+import { useObserver } from "mobx-react";
+import { StoreContext } from "./StoreContext";
 import { css, cx } from "emotion";
 import { useDrag } from "react-dnd";
 import DropZone from "./DropZone";
@@ -70,7 +71,7 @@ interface Props extends chrome.tabs.Tab {
 }
 
 const TabListItem: React.FC<Props> = props => {
-  const { globalState, setGlobalState } = useGlobal();
+  const store = useContext(StoreContext);
 
   const [{ isDragging, draggingId }, dragRef] = useDrag({
     item: { type: "tab", windowId: props.windowId, tabId: props.id },
@@ -81,10 +82,12 @@ const TabListItem: React.FC<Props> = props => {
   });
 
   useEffect(() => {
-    setGlobalState({ isDragging, draggingId });
+    if (draggingId !== undefined) {
+      store.setDraggingId(draggingId);
+    }
+    store.setIsDragging(isDragging);
   }, [isDragging]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isDraggingOther = globalState.isDragging && globalState.draggingId !== props.id;
   const dropZoneProps = { windowId: props.windowId, tabIndex: props.index };
 
   const style = cx(
@@ -98,7 +101,7 @@ const TabListItem: React.FC<Props> = props => {
   // show tab on hover
   const onMouseEnter = useCallback(
     event => {
-      if (!props.id || globalState.isHighlighting || event.shiftKey) {
+      if (!props.id || store.isHighlighting || event.shiftKey) {
         return;
       }
 
@@ -121,13 +124,13 @@ const TabListItem: React.FC<Props> = props => {
   // make clicked tab active
   const onClick = useCallback(() => {
     // toggle highlight
-    if (globalState.isShiftPressed && props.id) {
+    if (store.isShiftPressed && props.id) {
       window.chrome.tabs.update(props.id, { highlighted: !props.highlighted });
 
       const isHighlighting = props.windows.some(window => {
         return window.tabs && window.tabs.filter(tab => tab.highlighted).length > 1;
       });
-      setGlobalState({ isHighlighting });
+      store.setIsHighlighting(isHighlighting);
 
       return;
     }
@@ -142,27 +145,26 @@ const TabListItem: React.FC<Props> = props => {
     setTimeout(window.close, 0);
   }, [props]);
 
-  // do not include popup window as tab
-  if (props.url && props.url.match(POPUP_URL)) {
-    return null;
-  }
+  return useObserver(() => {
+    const isDraggingOther = store.isDragging && store.draggingId !== props.id;
 
-  return (
-    <li className={style} onMouseEnter={onMouseEnter} ref={dragRef}>
-      {isDraggingOther && <DropZone top {...dropZoneProps} />}
-      <div onClick={onClick}>
-        <TabListItemFavIcon
-          favIconUrl={props.favIconUrl}
-          title={props.title}
-          status={props.status}
-        />
-        <p className={styles.title}>{props.title}</p>
-        <p className={styles.url}>{props.url}</p>
-      </div>
-      <TabListItemMenu id={props.id} pinned={props.pinned} status={props.status} />
-      {isDraggingOther && <DropZone bottom {...dropZoneProps} />}
-    </li>
-  );
+    return props.url && props.url.match(POPUP_URL) ? null : (
+      <li className={style} onMouseEnter={onMouseEnter} ref={dragRef}>
+        {isDraggingOther && <DropZone top {...dropZoneProps} />}
+        <div onClick={onClick}>
+          <TabListItemFavIcon
+            favIconUrl={props.favIconUrl}
+            title={props.title}
+            status={props.status}
+          />
+          <p className={styles.title}>{props.title}</p>
+          <p className={styles.url}>{props.url}</p>
+        </div>
+        <TabListItemMenu id={props.id} pinned={props.pinned} status={props.status} />
+        {isDraggingOther && <DropZone bottom {...dropZoneProps} />}
+      </li>
+    );
+  });
 };
 
 export default TabListItem;

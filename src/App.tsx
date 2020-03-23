@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useGlobal } from "./components/GlobalContext";
+import React, { useState, useEffect, useCallback, useMemo, useContext } from "react";
+import { StoreContext } from "./components/StoreContext";
 import { css } from "emotion";
 import { DndProvider } from "react-dnd";
 import Backend from "react-dnd-html5-backend";
@@ -46,48 +46,50 @@ const App: React.FC = () => {
     );
   }, [setWindows]);
 
-  const { globalState, setGlobalState } = useGlobal();
+  const store = useContext(StoreContext);
 
   const focusLastActiveTab = useCallback(
     (event: MouseEvent) => {
-      if (globalState.isHighlighting) {
+      if (store.isHighlighting) {
         return;
       }
 
       if (!event.relatedTarget) {
         window.chrome.storage.local.get("lastActiveTab", result => {
           window.chrome.tabs.update(result.lastActiveTab.id, { active: true });
-          setGlobalState({ isHighlighting: false });
         });
       }
     },
-    [globalState, setGlobalState]
+    [store]
   );
 
   const handleKeyDown = useCallback(
     event => {
       if (event.shiftKey) {
-        setGlobalState({ isShiftPressed: true });
-      } else if (event.altKey) {
-        setGlobalState({ isAltPressed: true });
+        store.setIsShiftPressed(true);
+      }
+      if (event.altKey) {
+        store.setIsAltPressed(true);
       }
     },
-    [globalState, setGlobalState]
+    [store]
   );
 
+  const handleKeyUp = useCallback(() => {
+    store.setIsShiftPressed(false);
+    store.setIsAltPressed(false);
+  }, [store]);
+
   const handleBlur = useCallback(() => {
-    if (!globalState.isHighlighting) {
+    if (!store.isHighlighting) {
       return false;
     }
+
     window.chrome.storage.local.get("lastActiveTab", result => {
       window.chrome.tabs.update(result.lastActiveTab.id, { active: true });
-      setGlobalState({ isHighlighting: false });
+      store.setIsHighlighting(false);
     });
-  }, [globalState, setGlobalState]);
-
-  const handleKeyUp = useCallback(() => {
-    setGlobalState({ isShiftPressed: false, isAltPressed: false });
-  }, [globalState, setGlobalState]);
+  }, [store]);
 
   const windowEvents = useMemo(
     () => ({
@@ -96,7 +98,7 @@ const App: React.FC = () => {
       keyup: handleKeyUp,
       blur: handleBlur
     }),
-    [focusLastActiveTab, handleKeyDown, handleKeyUp]
+    [focusLastActiveTab, handleKeyDown, handleKeyUp, handleBlur]
   );
 
   useEffect(() => {
@@ -118,11 +120,6 @@ const App: React.FC = () => {
       }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // useEffect(() => {
-  //   console.log(globalState);
-  // }, [globalState.isHighlighting]);
-  console.log("render");
 
   return (
     <div className={styles.app}>
