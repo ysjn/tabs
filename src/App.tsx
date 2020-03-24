@@ -14,6 +14,7 @@ const styles = {
     display: flex;
     flex-direction: column;
     overflow: auto;
+    word-break: break-word;
   `,
   windowIndex: css`
     padding: 10px;
@@ -50,14 +51,8 @@ const App: React.FC = () => {
 
   const focusLastActiveTab = useCallback(
     (event: MouseEvent) => {
-      if (store.isHighlighting) {
-        return;
-      }
-
-      if (!event.relatedTarget) {
-        chrome.storage.local.get("lastActiveTab", result => {
-          chrome.tabs.update(result.lastActiveTab.id, { active: true });
-        });
+      if (!store.isHighlighting && !event.relatedTarget) {
+        chrome.tabs.update(store.lastActiveTabId, { active: true });
       }
     },
     [store]
@@ -101,8 +96,14 @@ const App: React.FC = () => {
     [focusLastActiveTab, handleKeyDown, handleKeyUp, handleBlur]
   );
 
+  // ComponentDidMount
   useEffect(() => {
     getTabs();
+
+    chrome.storage.local.get(["lastActiveWindowId", "lastActiveTabId"], result => {
+      store.setLastActiveWindowId(result.lastActiveWindowId);
+      store.setLastActiveTabId(result.lastActiveTabId);
+    });
 
     chromeTabEvents.map(event => (chrome.tabs as IIndexable)[event].addListener(getTabs));
     chrome.windows.onRemoved.addListener(getTabs);

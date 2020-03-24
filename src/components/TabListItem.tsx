@@ -20,7 +20,7 @@ const styles = {
   default: css`
     position: relative;
     display: block;
-    padding: 0 41px;
+    padding: 0 40px;
     border-bottom: 1px solid var(--divider);
     cursor: pointer;
     list-style: none;
@@ -30,21 +30,25 @@ const styles = {
     }
   `,
   title: css`
-    padding: 10px 0 23px;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    margin-bottom: 23px;
+    padding: 10px 5px 0;
+    overflow: hidden;
   `,
   url: css`
     position: absolute;
     left: 0;
     bottom: 0;
     width: 100%;
-    padding: 0 41px 8px;
+    padding: 0 45px 8px;
     color: var(--secondary);
     font-size: 10px;
     white-space: nowrap;
     text-overflow: ellipsis;
     box-sizing: border-box;
     overflow: hidden;
-    pointer-events: none;
   `
 };
 
@@ -100,27 +104,27 @@ const TabListItem: React.FC<Props> = props => {
   );
 
   // show tab on hover
-  const onMouseEnter = useCallback(
-    event => {
-      if (!props.id || store.isHighlighting || event.shiftKey) {
-        return;
-      }
+  const onMouseEnter = useCallback(() => {
+    if (!props.id || store.isHighlighting || store.isShiftPressed) {
+      return;
+    }
 
-      chrome.tabs.update(props.id, { active: true });
+    chrome.tabs.update(props.id, { active: true });
 
-      // if the window has not been focused on last update,
-      // focus window again to bring to front
-      if (lastFocusedWinId === props.windowId) {
-        return;
-      }
+    // if the window has not been focused on last update,
+    // focus window again to bring to front
+    if (
+      (lastFocusedWinId === 0 && store.lastActiveWindowId === props.windowId) ||
+      lastFocusedWinId === props.windowId
+    ) {
+      return;
+    }
 
-      chrome.windows.update(props.windowId, { focused: true }, () => {
-        chrome.windows.update(POPUP_WINDOW_ID, { focused: true });
-        lastFocusedWinId = props.windowId;
-      });
-    },
-    [props]
-  );
+    chrome.windows.update(props.windowId, { focused: true }, () => {
+      chrome.windows.update(POPUP_WINDOW_ID, { focused: true });
+      lastFocusedWinId = props.windowId;
+    });
+  }, [props]);
 
   // make clicked tab active
   const onClick = useCallback(() => {
@@ -132,7 +136,6 @@ const TabListItem: React.FC<Props> = props => {
         return window.tabs && window.tabs.filter(tab => tab.highlighted).length > 1;
       });
       store.setIsHighlighting(isHighlighting);
-
       return;
     }
 
@@ -158,8 +161,12 @@ const TabListItem: React.FC<Props> = props => {
             title={props.title}
             status={props.status}
           />
-          <p className={styles.title}>{props.title}</p>
-          <p className={styles.url}>{props.url}</p>
+          <p className={styles.title} title={props.title}>
+            {props.title}
+          </p>
+          <p className={styles.url} title={props.url}>
+            {props.url}
+          </p>
         </div>
         <TabListItemMenu id={props.id} pinned={props.pinned} status={props.status} />
         {isDraggingOther && <DropZone bottom {...dropZoneProps} />}

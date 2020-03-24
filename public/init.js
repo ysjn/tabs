@@ -17,7 +17,10 @@ chrome.browserAction.onClicked.addListener(() => {
       }
 
       chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-        chrome.storage.local.set({ lastActiveTab: tabs[0] });
+        chrome.storage.local.set({
+          lastActiveWindowId: tabs[0].windowId,
+          lastActiveTabId: tabs[0].id
+        });
       });
 
       const createData = {

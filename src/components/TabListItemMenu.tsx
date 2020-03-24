@@ -14,7 +14,7 @@ const style = css`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 41px;
+  width: 40px;
   height: 100%;
   color: var(--secondary);
   z-index: 200;
@@ -80,6 +80,7 @@ const TabListItemMenu: React.FC<Props> = props => {
       onClick={props.pinned ? handleUnpin : handleClose}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      title={props.pinned ? "unpin" : "close tab"}
     >
       <i className={icon} />
     </div>

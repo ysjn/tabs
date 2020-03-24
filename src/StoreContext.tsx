@@ -2,11 +2,19 @@ import { useLocalStore } from "mobx-react";
 import React from "react";
 
 const createStore = () => ({
+  lastActiveWindowId: 0,
+  lastActiveTabId: 0,
   draggingId: 0,
   isDragging: false,
   isHighlighting: false,
   isShiftPressed: false,
   isAltPressed: false,
+  setLastActiveWindowId(num: number) {
+    this.lastActiveWindowId = num;
+  },
+  setLastActiveTabId(num: number) {
+    this.lastActiveTabId = num;
+  },
   setDraggingId(num: number) {
     this.draggingId = num;
   },

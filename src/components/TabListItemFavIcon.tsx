@@ -13,7 +13,7 @@ const style = css`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 41px;
+  width: 40px;
   height: 100%;
 `;
 const favIconStyle = css`
