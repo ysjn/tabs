@@ -39,7 +39,7 @@ const DropZone: React.FC<Props> = props => {
   const [{ isOver }, drop] = useDrop({
     accept: "tab",
     drop: (item: DragObject) => {
-      window.chrome.tabs.move(item.tabId, {
+      chrome.tabs.move(item.tabId, {
         windowId: props.windowId,
         index: props.tabIndex
       });

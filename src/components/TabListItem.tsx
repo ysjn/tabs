@@ -9,9 +9,9 @@ import DropZone from "./DropZone";
 import TabListItemFavIcon from "./TabListItemFavIcon";
 import TabListItemMenu from "./TabListItemMenu";
 
-const POPUP_URL = window.chrome.runtime.getURL("index.html");
+const POPUP_URL = chrome.runtime.getURL("index.html");
 let POPUP_WINDOW_ID = 0;
-window.chrome.tabs.query({ url: POPUP_URL }, tab => {
+chrome.tabs.query({ url: POPUP_URL }, tab => {
   POPUP_WINDOW_ID = tab[0].windowId;
 });
 let lastFocusedWinId = 0;
@@ -106,7 +106,7 @@ const TabListItem: React.FC<Props> = props => {
         return;
       }
 
-      window.chrome.tabs.update(props.id, { active: true });
+      chrome.tabs.update(props.id, { active: true });
 
       // if the window has not been focused on last update,
       // focus window again to bring to front
@@ -114,8 +114,8 @@ const TabListItem: React.FC<Props> = props => {
         return;
       }
 
-      window.chrome.windows.update(props.windowId, { focused: true }, () => {
-        window.chrome.windows.update(POPUP_WINDOW_ID, { focused: true });
+      chrome.windows.update(props.windowId, { focused: true }, () => {
+        chrome.windows.update(POPUP_WINDOW_ID, { focused: true });
         lastFocusedWinId = props.windowId;
       });
     },
@@ -126,7 +126,7 @@ const TabListItem: React.FC<Props> = props => {
   const onClick = useCallback(() => {
     // toggle highlight
     if (store.isShiftPressed && props.id) {
-      window.chrome.tabs.update(props.id, { highlighted: !props.highlighted });
+      chrome.tabs.update(props.id, { highlighted: !props.highlighted });
 
       const isHighlighting = props.windows.some(window => {
         return window.tabs && window.tabs.filter(tab => tab.highlighted).length > 1;
@@ -137,11 +137,11 @@ const TabListItem: React.FC<Props> = props => {
     }
 
     // focus window and close popup
-    window.chrome.windows.get(props.windowId, win => {
+    chrome.windows.get(props.windowId, win => {
       if (win.focused) {
         return false;
       }
-      window.chrome.windows.update(props.windowId, { focused: true });
+      chrome.windows.update(props.windowId, { focused: true });
     });
     setTimeout(window.close, 0);
   }, [props]);

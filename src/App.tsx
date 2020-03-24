@@ -41,7 +41,7 @@ const App: React.FC = () => {
   const [windows, setWindows] = useState<chrome.windows.Window[]>([]);
 
   const getTabs = useCallback(() => {
-    window.chrome.windows.getAll({ populate: true, windowTypes: ["normal"] }, windowsArray =>
+    chrome.windows.getAll({ populate: true, windowTypes: ["normal"] }, windowsArray =>
       setWindows(windowsArray)
     );
   }, [setWindows]);
@@ -55,8 +55,8 @@ const App: React.FC = () => {
       }
 
       if (!event.relatedTarget) {
-        window.chrome.storage.local.get("lastActiveTab", result => {
-          window.chrome.tabs.update(result.lastActiveTab.id, { active: true });
+        chrome.storage.local.get("lastActiveTab", result => {
+          chrome.tabs.update(result.lastActiveTab.id, { active: true });
         });
       }
     },
@@ -85,8 +85,8 @@ const App: React.FC = () => {
       return false;
     }
 
-    window.chrome.storage.local.get("lastActiveTab", result => {
-      window.chrome.tabs.update(result.lastActiveTab.id, { active: true });
+    chrome.storage.local.get("lastActiveTab", result => {
+      chrome.tabs.update(result.lastActiveTab.id, { active: true });
       store.setIsHighlighting(false);
     });
   }, [store]);
@@ -104,17 +104,15 @@ const App: React.FC = () => {
   useEffect(() => {
     getTabs();
 
-    chromeTabEvents.map(event => (window.chrome.tabs as IIndexable)[event].addListener(getTabs));
-    window.chrome.windows.onRemoved.addListener(getTabs);
+    chromeTabEvents.map(event => (chrome.tabs as IIndexable)[event].addListener(getTabs));
+    chrome.windows.onRemoved.addListener(getTabs);
     for (let k in windowEvents) {
       window.addEventListener(k, (windowEvents as IIndexable)[k]);
     }
 
     return () => {
-      chromeTabEvents.map(event =>
-        (window.chrome.tabs as IIndexable)[event].removeListener(getTabs)
-      );
-      window.chrome.windows.onRemoved.removeListener(getTabs);
+      chromeTabEvents.map(event => (chrome.tabs as IIndexable)[event].removeListener(getTabs));
+      chrome.windows.onRemoved.removeListener(getTabs);
       for (let k in windowEvents) {
         window.removeEventListener(k, (windowEvents as IIndexable)[k]);
       }

@@ -35,7 +35,7 @@ const TabListItemMenu: React.FC<Props> = props => {
     if (!props.id) {
       return;
     }
-    window.chrome.tabs.remove(props.id);
+    chrome.tabs.remove(props.id);
   }, [props]);
 
   // close unpin
@@ -43,7 +43,7 @@ const TabListItemMenu: React.FC<Props> = props => {
     if (!props.id) {
       return;
     }
-    window.chrome.tabs.update(props.id, { pinned: false });
+    chrome.tabs.update(props.id, { pinned: false });
   }, [props]);
 
   const [isHovered, setIsHovered] = useState(false);
