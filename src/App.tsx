@@ -1,6 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
 import { css } from "emotion";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { DndProvider } from "react-dnd";
+import Backend from "react-dnd-html5-backend";
+
 import TabList from "./components/TabList";
+import { StoreContext } from "./StoreContext";
 
 const styles = {
   app: css`
@@ -17,48 +21,127 @@ const styles = {
   `
 };
 
+const chromeTabEvents = [
+  "onCreated",
+  "onUpdated",
+  "onMoved",
+  "onSelectionChanged",
+  "onActiveChanged",
+  "onActivated",
+  "onHighlightChanged",
+  "onHighlighted",
+  "onRemoved"
+];
+
+interface IIndexable {
+  [key: string]: any;
+}
+
 const App: React.FC = () => {
   const [windows, setWindows] = useState<chrome.windows.Window[]>([]);
 
   const getTabs = useCallback(() => {
-    window.chrome.windows.getAll(
-      { populate: true, windowTypes: ["normal"] },
-      windowsArray => setWindows(windowsArray)
+    window.chrome.windows.getAll({ populate: true, windowTypes: ["normal"] }, windowsArray =>
+      setWindows(windowsArray)
     );
-  }, []);
+  }, [setWindows]);
+
+  const store = useContext(StoreContext);
+
+  const focusLastActiveTab = useCallback(
+    (event: MouseEvent) => {
+      if (store.isHighlighting) {
+        return;
+      }
+
+      if (!event.relatedTarget) {
+        window.chrome.storage.local.get("lastActiveTab", result => {
+          window.chrome.tabs.update(result.lastActiveTab.id, { active: true });
+        });
+      }
+    },
+    [store]
+  );
+
+  const handleKeyDown = useCallback(
+    event => {
+      if (event.shiftKey) {
+        store.setIsShiftPressed(true);
+      }
+      if (event.altKey) {
+        store.setIsAltPressed(true);
+      }
+    },
+    [store]
+  );
+
+  const handleKeyUp = useCallback(() => {
+    store.setIsShiftPressed(false);
+    store.setIsAltPressed(false);
+  }, [store]);
+
+  const handleBlur = useCallback(() => {
+    if (!store.isHighlighting) {
+      return false;
+    }
+
+    window.chrome.storage.local.get("lastActiveTab", result => {
+      window.chrome.tabs.update(result.lastActiveTab.id, { active: true });
+      store.setIsHighlighting(false);
+    });
+  }, [store]);
+
+  const windowEvents = useMemo(
+    () => ({
+      mouseout: focusLastActiveTab,
+      keydown: handleKeyDown,
+      keyup: handleKeyUp,
+      blur: handleBlur
+    }),
+    [focusLastActiveTab, handleKeyDown, handleKeyUp, handleBlur]
+  );
 
   useEffect(() => {
     getTabs();
-    window.chrome.tabs.onCreated.addListener(getTabs);
-    window.chrome.tabs.onUpdated.addListener(getTabs);
-    window.chrome.tabs.onMoved.addListener(getTabs);
-    window.chrome.tabs.onSelectionChanged.addListener(getTabs);
-    window.chrome.tabs.onActiveChanged.addListener(getTabs);
-    window.chrome.tabs.onActivated.addListener(getTabs);
-    window.chrome.tabs.onHighlightChanged.addListener(getTabs);
-    window.chrome.tabs.onHighlighted.addListener(getTabs);
-    window.chrome.tabs.onRemoved.addListener(getTabs);
-  }, []);
+
+    chromeTabEvents.map(event => (window.chrome.tabs as IIndexable)[event].addListener(getTabs));
+    window.chrome.windows.onRemoved.addListener(getTabs);
+    for (let k in windowEvents) {
+      window.addEventListener(k, (windowEvents as IIndexable)[k]);
+    }
+
+    return () => {
+      chromeTabEvents.map(event =>
+        (window.chrome.tabs as IIndexable)[event].removeListener(getTabs)
+      );
+      window.chrome.windows.onRemoved.removeListener(getTabs);
+      for (let k in windowEvents) {
+        window.removeEventListener(k, (windowEvents as IIndexable)[k]);
+      }
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className={styles.app}>
-      {windows.length > 0 &&
-        windows.map((window, index) => {
-          if (window.tabs === undefined) {
-            return null;
-          }
+      <DndProvider backend={Backend}>
+        {windows.length > 0 &&
+          windows.map((window, index) => {
+            if (window.tabs === undefined) {
+              return null;
+            }
 
-          if (windows.length === 1) {
-            return <TabList tabs={window.tabs} />;
-          }
+            if (windows.length === 1) {
+              return <TabList windows={windows} tabs={window.tabs} />;
+            }
 
-          return (
-            <React.Fragment>
-              <p className={styles.windowIndex}>Window {index + 1}</p>
-              <TabList tabs={window.tabs} />
-            </React.Fragment>
-          );
-        })}
+            return (
+              <React.Fragment>
+                <p className={styles.windowIndex}>Window {index + 1}</p>
+                <TabList windows={windows} tabs={window.tabs} />
+              </React.Fragment>
+            );
+          })}
+      </DndProvider>
     </div>
   );
 };

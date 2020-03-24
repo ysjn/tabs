@@ -11,31 +11,25 @@ window.chrome.browserAction.onClicked.addListener(() => {
     }
 
     // 開いていなければ新たに開く
-    window.chrome.windows.getCurrent((win) => {
-      let popupWidth = 400;
-      let left = win.left + win.width;
-      let top = 85;
-      let popupHeight = screen.height - (top * 2);
-      window.chrome.windows.create({
-        'url': 'index.html',
-        'type': 'popup',
-        'width': popupWidth,
-        'height': popupHeight,
-        'left': Math.round(left),
-        'top': Math.round(top)
+    window.chrome.windows.getCurrent(win => {
+      if (win.left === undefined || win.width === undefined) {
+        return;
+      }
+
+      window.chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+        window.chrome.storage.local.set({ lastActiveTab: tabs[0] });
       });
-      // let popupWidth = screen.width;
-      // let popupHeight = 100;
-      // window.chrome.windows.create({
-      //   'url': 'index.html',
-      //   'type': 'popup',
-      //   'width': popupWidth,
-      //   'height': popupHeight,
-      //   'left': 0,
-      //   'top': 0
-      // });
+
+      const createData = {
+        url: "index.html",
+        type: "popup",
+        top: 85,
+        left: Math.round(win.left + win.width),
+        width: 400,
+        get height() { return Math.round(screen.height - this.top * 2); },
+      };
+
+      window.chrome.windows.create(createData);
     });
-
   });
-
 });

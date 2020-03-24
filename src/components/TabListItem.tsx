@@ -1,11 +1,13 @@
-import React, { useState, useCallback } from "react";
 import { css, cx } from "emotion";
+import { useObserver } from "mobx-react";
+import React, { useCallback, useContext, useEffect } from "react";
+import { useDrag } from "react-dnd";
 
-// Icons
-import "css.gg/icons/close.css";
-import "css.gg/icons/pin-alt.css";
-import "css.gg/icons/pin-bottom.css";
-import "css.gg/icons/file.css";
+import { StoreContext } from "../StoreContext";
+
+import DropZone from "./DropZone";
+import TabListItemFavIcon from "./TabListItemFavIcon";
+import TabListItemMenu from "./TabListItemMenu";
 
 const POPUP_URL = window.chrome.runtime.getURL("index.html");
 let POPUP_WINDOW_ID = 0;
@@ -18,7 +20,6 @@ const styles = {
   default: css`
     position: relative;
     display: block;
-    max-width: 700px;
     padding: 0 41px;
     border-bottom: 1px solid var(--divider);
     cursor: pointer;
@@ -27,16 +28,6 @@ const styles = {
     &:hover {
       background-color: var(--hover);
     }
-  `,
-  isPinned: css`
-    opacity: 0.5;
-  `,
-  favicon: css`
-    width: 16px;
-    height: 16px;
-    text-indent: 100%;
-    white-space: nowrap;
-    overflow: hidden;
   `,
   title: css`
     padding: 10px 0 23px;
@@ -54,18 +45,7 @@ const styles = {
     box-sizing: border-box;
     overflow: hidden;
     pointer-events: none;
-  `,
-  column: css`
-    position: absolute;
-    top: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 41px;
-    height: 100%;
-  `,
-  columnLeft: "",
-  columnRight: ""
+  `
 };
 
 interface Props extends chrome.tabs.Tab {
@@ -88,112 +68,104 @@ interface Props extends chrome.tabs.Tab {
   // url: "https://www.google.com/"
   // width: 1031
   // windowId: 12
+  windows: chrome.windows.Window[];
 }
 
 const TabListItem: React.FC<Props> = props => {
+  const store = useContext(StoreContext);
+
+  const [{ isDragging, draggingId }, dragRef] = useDrag({
+    item: { type: "tab", windowId: props.windowId, tabId: props.id },
+    collect: monitor => ({
+      isDragging: monitor.isDragging(),
+      draggingId: props.id
+    })
+  });
+
+  useEffect(() => {
+    if (draggingId !== undefined) {
+      store.setDraggingId(draggingId);
+    }
+    store.setIsDragging(isDragging);
+  }, [isDragging]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const dropZoneProps = { windowId: props.windowId, tabIndex: props.index };
+
   const style = cx(
     styles.default,
     css`
-      ${props.selected ? "background-color: var(--active)" : ""}
-    `,
-    { [styles.isPinned]: props.pinned }
-  );
-  styles.columnLeft = cx(
-    styles.column,
-    css`
-      left: 0;
+      ${props.active || props.highlighted ? "background-color: var(--active);" : ""}
+      ${isDragging ? "cursor: grabbing;" : ""}
     `
-  );
-  styles.columnRight = cx(
-    styles.column,
-    css`
-      right: 0;
-
-      ${!props.pinned
-        ? `
-        &:hover {
-          background-color: var(--bg);
-          color: #f77;
-        }`
-        : ".gg-pin-alt { top: 5px; }"}
-    `
-  );
-
-  const [isFaviconAvailable, setIsFaviconAvailable] = useState(true);
-  const faviconNotAvailable = useCallback(
-    () => setIsFaviconAvailable(false),
-    []
   );
 
   // show tab on hover
-  const onHover = useCallback(() => {
-    if (!props.id) {
-      return;
-    }
-    window.chrome.tabs.update(props.id, { active: true });
+  const onMouseEnter = useCallback(
+    event => {
+      if (!props.id || store.isHighlighting || event.shiftKey) {
+        return;
+      }
 
-    // if the window has not been focused on last update,
-    // focus window again to bring to front
-    if (lastFocusedWinId === props.windowId) {
-      return;
-    }
+      window.chrome.tabs.update(props.id, { active: true });
 
-    window.chrome.windows.update(props.windowId, { focused: true }, () => {
-      window.chrome.windows.update(POPUP_WINDOW_ID, { focused: true });
-      lastFocusedWinId = props.windowId;
-    });
-  }, []);
+      // if the window has not been focused on last update,
+      // focus window again to bring to front
+      if (lastFocusedWinId === props.windowId) {
+        return;
+      }
+
+      window.chrome.windows.update(props.windowId, { focused: true }, () => {
+        window.chrome.windows.update(POPUP_WINDOW_ID, { focused: true });
+        lastFocusedWinId = props.windowId;
+      });
+    },
+    [props]
+  );
 
   // make clicked tab active
   const onClick = useCallback(() => {
+    // toggle highlight
+    if (store.isShiftPressed && props.id) {
+      window.chrome.tabs.update(props.id, { highlighted: !props.highlighted });
+
+      const isHighlighting = props.windows.some(window => {
+        return window.tabs && window.tabs.filter(tab => tab.highlighted).length > 1;
+      });
+      store.setIsHighlighting(isHighlighting);
+
+      return;
+    }
+
+    // focus window and close popup
     window.chrome.windows.get(props.windowId, win => {
       if (win.focused) {
         return false;
       }
       window.chrome.windows.update(props.windowId, { focused: true });
     });
-    setTimeout(() => window.close(), 0);
-  }, []);
+    setTimeout(window.close, 0);
+  }, [props]);
 
-  // close tab
-  const handleClose = useCallback(() => {
-    if (!props.id) {
-      return;
-    }
-    window.chrome.tabs.remove(props.id);
-  }, []);
+  return useObserver(() => {
+    const isDraggingOther = store.isDragging && store.draggingId !== props.id;
 
-  // do not include popup window as tab
-  if (props.url && props.url.match(POPUP_URL)) {
-    return null;
-  }
-
-  return (
-    <li className={style} onMouseEnter={onHover}>
-      <div onClick={onClick}>
-        <div className={styles.columnLeft}>
-          {props.favIconUrl && isFaviconAvailable ? (
-            <img
-              className={styles.favicon}
-              src={props.favIconUrl}
-              alt={`favicon for ${props.title}`}
-              onError={faviconNotAvailable}
-            />
-          ) : (
-            <i className="gg-file" />
-          )}
+    return props.url && props.url.match(POPUP_URL) ? null : (
+      <li className={style} onMouseEnter={onMouseEnter} ref={dragRef}>
+        {isDraggingOther && <DropZone top {...dropZoneProps} />}
+        <div onClick={onClick}>
+          <TabListItemFavIcon
+            favIconUrl={props.favIconUrl}
+            title={props.title}
+            status={props.status}
+          />
+          <p className={styles.title}>{props.title}</p>
+          <p className={styles.url}>{props.url}</p>
         </div>
-        <p className={styles.title}>{props.title}</p>
-        <p className={styles.url}>{props.url}</p>
-      </div>
-      <div
-        className={styles.columnRight}
-        onClick={props.pinned ? undefined : handleClose}
-      >
-        <i className={props.pinned ? "gg-pin-alt" : "gg-close"} />
-      </div>
-    </li>
-  );
+        <TabListItemMenu id={props.id} pinned={props.pinned} status={props.status} />
+        {isDraggingOther && <DropZone bottom {...dropZoneProps} />}
+      </li>
+    );
+  });
 };
 
 export default TabListItem;
