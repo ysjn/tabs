@@ -1,9 +1,10 @@
+import "modern-css-reset/dist/reset.min.css";
 import React from "react";
 import ReactDOM from "react-dom";
-import "modern-css-reset/dist/reset.min.css";
-import { StoreProvider } from "./components/StoreContext";
+
 import App from "./App";
 import * as serviceWorker from "./serviceWorker";
+import { StoreProvider } from "./StoreContext";
 
 const Root: React.FC = () => (
   <StoreProvider>

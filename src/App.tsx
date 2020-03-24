@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo, useContext } from "react";
-import { StoreContext } from "./components/StoreContext";
 import { css } from "emotion";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { DndProvider } from "react-dnd";
 import Backend from "react-dnd-html5-backend";
 
 import TabList from "./components/TabList";
+import { StoreContext } from "./StoreContext";
 
 const styles = {
   app: css`

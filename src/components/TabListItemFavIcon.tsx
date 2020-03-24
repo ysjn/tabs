@@ -1,9 +1,8 @@
-import React, { useState, useCallback } from "react";
-import { css } from "emotion";
-
 // Icons
 import "css.gg/icons/file.css";
 import "css.gg/icons/spinner.css";
+import { css } from "emotion";
+import React, { useCallback, useState } from "react";
 
 type Props = Pick<chrome.tabs.Tab, "favIconUrl" | "title" | "status">;
 

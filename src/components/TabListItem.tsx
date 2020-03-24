@@ -1,12 +1,13 @@
-import React, { useCallback, useEffect, useContext } from "react";
-import { useObserver } from "mobx-react";
-import { StoreContext } from "./StoreContext";
 import { css, cx } from "emotion";
+import { useObserver } from "mobx-react";
+import React, { useCallback, useContext, useEffect } from "react";
 import { useDrag } from "react-dnd";
-import DropZone from "./DropZone";
 
-import TabListItemMenu from "./TabListItemMenu";
+import { StoreContext } from "../StoreContext";
+
+import DropZone from "./DropZone";
 import TabListItemFavIcon from "./TabListItemFavIcon";
+import TabListItemMenu from "./TabListItemMenu";
 
 const POPUP_URL = window.chrome.runtime.getURL("index.html");
 let POPUP_WINDOW_ID = 0;

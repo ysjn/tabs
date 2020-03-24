@@ -1,10 +1,9 @@
-import React, { useState, useCallback, useEffect } from "react";
-import { css } from "emotion";
-
 // Icons
 import "css.gg/icons/close.css";
 import "css.gg/icons/pin-alt.css";
 import "css.gg/icons/pin-bottom.css";
+import { css } from "emotion";
+import React, { useCallback, useEffect, useState } from "react";
 
 type Props = Pick<chrome.tabs.Tab, "id" | "pinned" | "status">;
 
