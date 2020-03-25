@@ -10,7 +10,7 @@ import DropZone from "./DropZone";
 import TabListItemFavIcon from "./TabListItemFavIcon";
 import TabListItemMenu from "./TabListItemMenu";
 
-const POPUP_URL = chrome.runtime.getURL("index.html");
+const POPUP_URL = browser.runtime.getURL("index.html");
 let POPUP_WINDOW_ID = 0;
 browser.tabs.query({ url: POPUP_URL }).then(tab => {
   POPUP_WINDOW_ID = tab[0].windowId as number;
