@@ -55,7 +55,8 @@
   "devDependencies": {
     "@types/chrome": "^0.0.99",
     "emotion": "^10.0.27",
-    "npm-watch": "^0.6.0"
+    "npm-watch": "^0.6.0",
+    "webextension-polyfill-ts": "^0.13.0"
   },
   "prettier": {
     "printWidth": 100

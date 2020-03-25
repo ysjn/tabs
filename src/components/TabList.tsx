@@ -14,6 +14,8 @@ const style = css`
 `;
 
 const TabList: React.FC<Props> = props => {
+  console.log("TabList render");
+
   return (
     <div className={style}>
       <ul className="">

@@ -2,6 +2,7 @@ import { css, cx } from "emotion";
 import { useObserver } from "mobx-react";
 import React, { useCallback, useContext, useEffect } from "react";
 import { useDrag } from "react-dnd";
+import { browser } from "webextension-polyfill-ts";
 
 import { StoreContext } from "../StoreContext";
 
@@ -11,8 +12,8 @@ import TabListItemMenu from "./TabListItemMenu";
 
 const POPUP_URL = chrome.runtime.getURL("index.html");
 let POPUP_WINDOW_ID = 0;
-chrome.tabs.query({ url: POPUP_URL }, tab => {
-  POPUP_WINDOW_ID = tab[0].windowId;
+browser.tabs.query({ url: POPUP_URL }).then(tab => {
+  POPUP_WINDOW_ID = tab[0].windowId as number;
 });
 let lastFocusedWinId = 0;
 
@@ -109,7 +110,7 @@ const TabListItem: React.FC<Props> = props => {
       return;
     }
 
-    chrome.tabs.update(props.id, { active: true });
+    browser.tabs.update(props.id, { active: true });
 
     // if the window has not been focused on last update,
     // focus window again to bring to front
@@ -120,8 +121,8 @@ const TabListItem: React.FC<Props> = props => {
       return;
     }
 
-    chrome.windows.update(props.windowId, { focused: true }, () => {
-      chrome.windows.update(POPUP_WINDOW_ID, { focused: true });
+    browser.windows.update(props.windowId, { focused: true }).then(() => {
+      browser.windows.update(POPUP_WINDOW_ID, { focused: true });
       lastFocusedWinId = props.windowId;
     });
   }, [props]);
@@ -130,7 +131,7 @@ const TabListItem: React.FC<Props> = props => {
   const onClick = useCallback(() => {
     // toggle highlight
     if (store.isShiftPressed && props.id) {
-      chrome.tabs.update(props.id, { highlighted: !props.highlighted });
+      browser.tabs.update(props.id, { highlighted: !props.highlighted });
 
       const isHighlighting = props.windows.some(window => {
         return window.tabs && window.tabs.filter(tab => tab.highlighted).length > 1;
@@ -140,14 +141,16 @@ const TabListItem: React.FC<Props> = props => {
     }
 
     // focus window and close popup
-    chrome.windows.get(props.windowId, win => {
+    browser.windows.get(props.windowId).then(win => {
       if (win.focused) {
         return false;
       }
-      chrome.windows.update(props.windowId, { focused: true });
+      browser.windows.update(props.windowId, { focused: true });
     });
     setTimeout(window.close, 0);
   }, [props]);
+
+  console.log("TabListItem render");
 
   return useObserver(() => {
     const isDraggingOther = store.isDragging && store.draggingId !== props.id;

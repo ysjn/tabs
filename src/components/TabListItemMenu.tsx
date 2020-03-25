@@ -4,6 +4,7 @@ import "css.gg/icons/pin-alt.css";
 import "css.gg/icons/pin-bottom.css";
 import { css } from "emotion";
 import React, { useCallback, useEffect, useState } from "react";
+import { browser } from "webextension-polyfill-ts";
 
 type Props = Pick<chrome.tabs.Tab, "id" | "pinned" | "status">;
 
@@ -35,7 +36,7 @@ const TabListItemMenu: React.FC<Props> = props => {
     if (!props.id) {
       return;
     }
-    chrome.tabs.remove(props.id);
+    browser.tabs.remove(props.id);
   }, [props]);
 
   // close unpin
@@ -43,7 +44,7 @@ const TabListItemMenu: React.FC<Props> = props => {
     if (!props.id) {
       return;
     }
-    chrome.tabs.update(props.id, { pinned: false });
+    browser.tabs.update(props.id, { pinned: false });
   }, [props]);
 
   const [isHovered, setIsHovered] = useState(false);

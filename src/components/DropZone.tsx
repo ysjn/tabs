@@ -1,6 +1,9 @@
 import { css, cx } from "emotion";
-import React from "react";
+import React, { useContext } from "react";
 import { DragObjectWithType, useDrop } from "react-dnd";
+import { browser } from "webextension-polyfill-ts";
+
+import { StoreContext } from "../StoreContext";
 
 const styles = {
   default: css`
@@ -36,13 +39,28 @@ interface DragObject extends DragObjectWithType {
 }
 
 const DropZone: React.FC<Props> = props => {
+  const store = useContext(StoreContext);
   const [{ isOver }, drop] = useDrop({
     accept: "tab",
     drop: (item: DragObject) => {
-      chrome.tabs.move(item.tabId, {
-        windowId: props.windowId,
-        index: props.tabIndex
-      });
+      if (store.isHighlighting) {
+        browser.tabs
+          .query({
+            highlighted: true,
+            windowType: "normal"
+          })
+          .then(tabs =>
+            browser.tabs.move(tabs.map(tab => tab.id) as number[], {
+              windowId: props.windowId,
+              index: props.tabIndex
+            })
+          );
+      } else {
+        browser.tabs.move(item.tabId, {
+          windowId: props.windowId,
+          index: props.tabIndex
+        });
+      }
     },
     collect: monitor => ({
       isOver: monitor.isOver()
