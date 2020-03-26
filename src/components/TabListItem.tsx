@@ -102,7 +102,7 @@ const TabListItem: React.FC<chrome.tabs.Tab> = props => {
       browser.windows.update(POPUP_WINDOW_ID, { focused: true });
       lastFocusedWinId = props.windowId;
     });
-  }, [props]);
+  }, [props, store.isHighlighting, store.isShiftPressed, store.lastActiveWindowId]);
 
   // make clicked tab active
   const onClick = useCallback(() => {
@@ -120,7 +120,7 @@ const TabListItem: React.FC<chrome.tabs.Tab> = props => {
       browser.windows.update(props.windowId, { focused: true });
     });
     setTimeout(window.close, 0);
-  }, [props]);
+  }, [props, store.isShiftPressed]);
 
   return useObserver(() => {
     const isDraggingOther = store.isDragging && store.draggingId !== props.id;

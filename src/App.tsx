@@ -146,7 +146,7 @@ const App: React.FC = () => {
       window => window.tabs && window.tabs.filter(tab => tab.highlighted).length >= 2
     );
     store.setIsHighlighting(isHighlighting);
-  }, [windows]);
+  }, [windows, store]);
 
   return (
     <div className={styles.app}>
