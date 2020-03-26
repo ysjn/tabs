@@ -124,8 +124,19 @@ const TabListItem: React.FC<chrome.tabs.Tab> = props => {
 
   return useObserver(() => {
     const isDraggingOther = store.isDragging && store.draggingId !== props.id;
+    if (props.url === undefined || props.title === undefined || props.url.match(POPUP_URL)) {
+      return null;
+    }
 
-    return props.url && props.url.match(POPUP_URL) ? null : (
+    const isFiltering = store.filterString !== "";
+    const isFilterMatch =
+      props.url.toLowerCase().indexOf(store.filterString) >= 0 ||
+      props.title.toLowerCase().indexOf(store.filterString) >= 0;
+    if (isFiltering && !isFilterMatch) {
+      return null;
+    }
+
+    return (
       <li className={style} onMouseEnter={onMouseEnter} ref={dragRef}>
         {isDraggingOther && <DropZone top {...dropZoneProps} />}
         <div onClick={onClick}>

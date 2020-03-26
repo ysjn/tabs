@@ -4,6 +4,7 @@ import { DndProvider } from "react-dnd";
 import Backend from "react-dnd-html5-backend";
 import { browser } from "webextension-polyfill-ts";
 
+import FilterInput from "./components/FilterInput";
 import TabList from "./components/TabList";
 import { StoreContext } from "./StoreContext";
 
@@ -147,6 +148,7 @@ const App: React.FC = () => {
 
   return (
     <div className={styles.app}>
+      <FilterInput />
       <DndProvider backend={Backend}>
         {windows.map((window, index) =>
           window.tabs === undefined ? null : (

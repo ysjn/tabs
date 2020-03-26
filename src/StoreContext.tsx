@@ -4,6 +4,7 @@ import React from "react";
 const createStore = () => ({
   lastActiveWindowId: 0,
   lastActiveTabId: 0,
+  filterString: "",
   draggingId: 0,
   isDragging: false,
   isHighlighting: false,
@@ -14,6 +15,9 @@ const createStore = () => ({
   },
   setLastActiveTabId(num: number) {
     this.lastActiveTabId = num;
+  },
+  setFilterString(str: string) {
+    this.filterString = str;
   },
   setDraggingId(num: number) {
     this.draggingId = num;
