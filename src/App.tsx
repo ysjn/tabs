@@ -5,6 +5,7 @@ import Backend from "react-dnd-html5-backend";
 import { browser } from "webextension-polyfill-ts";
 
 import FilterInput from "./components/FilterInput";
+import Header from "./components/Header";
 import TabList from "./components/TabList";
 import { StoreContext } from "./StoreContext";
 
@@ -15,6 +16,7 @@ const styles = {
     line-height: 1.4;
     display: flex;
     flex-direction: column;
+    min-width: 150px;
     height: 100vh;
     overflow: auto;
     word-break: break-word;
@@ -148,7 +150,9 @@ const App: React.FC = () => {
 
   return (
     <div className={styles.app}>
-      <FilterInput />
+      <Header>
+        <FilterInput />
+      </Header>
       <DndProvider backend={Backend}>
         {windows.map((window, index) =>
           window.tabs === undefined ? null : (

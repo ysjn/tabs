@@ -8,8 +8,8 @@ import { StoreContext } from "../StoreContext";
 
 const styles = {
   wrapper: css`
+    flex: 1 0 auto;
     padding: 10px;
-    border-bottom: 1px solid var(--divider);
   `,
   input: css`
     width: 100%;
@@ -78,6 +78,7 @@ const FilterInput: React.FC = () => {
           className={styles.input}
           onChange={onChangeHandler}
           value={store.filterString}
+          size={1}
           autoFocus
           ref={inputRef}
         />
