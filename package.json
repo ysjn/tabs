@@ -24,6 +24,7 @@
   "scripts": {
     "start": "npm-watch build",
     "build": "react-scripts build",
+    "get-polyfill": "cp node_modules/webextension-polyfill/dist/browser-polyfill.min.js public/browser-polyfill.min.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

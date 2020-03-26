@@ -53,34 +53,11 @@ const styles = {
   `
 };
 
-interface Props extends chrome.tabs.Tab {
-  // active: true
-  // audible: false
-  // autoDiscardable: true
-  // discarded: false
-  // favIconUrl: "https://www.google.com/favicon.ico"
-  // height: 766
-  // highlighted: true
-  // id: 566
-  // incognito: false
-  // index: 9
-  // mutedInfo: {muted: false}
-  // openerTabId: 16
-  // pinned: false
-  // selected: true
-  // status: "complete"
-  // title: "Google"
-  // url: "https://www.google.com/"
-  // width: 1031
-  // windowId: 12
-  windows: chrome.windows.Window[];
-}
-
-const TabListItem: React.FC<Props> = props => {
+const TabListItem: React.FC<chrome.tabs.Tab> = props => {
   const store = useContext(StoreContext);
 
   const [{ isDragging, draggingId }, dragRef] = useDrag({
-    item: { type: "tab", windowId: props.windowId, tabId: props.id },
+    item: { type: "tab", windowId: props.windowId, tabId: props.id, tabIndex: props.index },
     collect: monitor => ({
       isDragging: monitor.isDragging(),
       draggingId: props.id
@@ -94,7 +71,7 @@ const TabListItem: React.FC<Props> = props => {
     store.setIsDragging(isDragging);
   }, [isDragging]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const dropZoneProps = { windowId: props.windowId, tabIndex: props.index };
+  const dropZoneProps = { tabId: props.id, windowId: props.windowId, tabIndex: props.index };
 
   const style = cx(
     styles.default,
@@ -132,11 +109,6 @@ const TabListItem: React.FC<Props> = props => {
     // toggle highlight
     if (store.isShiftPressed && props.id) {
       browser.tabs.update(props.id, { highlighted: !props.highlighted });
-
-      const isHighlighting = props.windows.some(window => {
-        return window.tabs && window.tabs.filter(tab => tab.highlighted).length > 1;
-      });
-      store.setIsHighlighting(isHighlighting);
       return;
     }
 
@@ -149,8 +121,6 @@ const TabListItem: React.FC<Props> = props => {
     });
     setTimeout(window.close, 0);
   }, [props]);
-
-  console.log("TabListItem render");
 
   return useObserver(() => {
     const isDraggingOther = store.isDragging && store.draggingId !== props.id;
