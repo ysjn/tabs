@@ -2,6 +2,7 @@ import { css, cx } from "emotion";
 import { useObserver } from "mobx-react";
 import React, { useCallback, useContext, useEffect } from "react";
 import { useDrag } from "react-dnd";
+import { browser } from "webextension-polyfill-ts";
 
 import { StoreContext } from "../StoreContext";
 
@@ -9,10 +10,10 @@ import DropZone from "./DropZone";
 import TabListItemFavIcon from "./TabListItemFavIcon";
 import TabListItemMenu from "./TabListItemMenu";
 
-const POPUP_URL = chrome.runtime.getURL("index.html");
+const POPUP_URL = browser.runtime.getURL("index.html");
 let POPUP_WINDOW_ID = 0;
-chrome.tabs.query({ url: POPUP_URL }, tab => {
-  POPUP_WINDOW_ID = tab[0].windowId;
+browser.tabs.query({ url: POPUP_URL }).then(tab => {
+  POPUP_WINDOW_ID = tab[0].windowId as number;
 });
 let lastFocusedWinId = 0;
 
@@ -52,34 +53,11 @@ const styles = {
   `
 };
 
-interface Props extends chrome.tabs.Tab {
-  // active: true
-  // audible: false
-  // autoDiscardable: true
-  // discarded: false
-  // favIconUrl: "https://www.google.com/favicon.ico"
-  // height: 766
-  // highlighted: true
-  // id: 566
-  // incognito: false
-  // index: 9
-  // mutedInfo: {muted: false}
-  // openerTabId: 16
-  // pinned: false
-  // selected: true
-  // status: "complete"
-  // title: "Google"
-  // url: "https://www.google.com/"
-  // width: 1031
-  // windowId: 12
-  windows: chrome.windows.Window[];
-}
-
-const TabListItem: React.FC<Props> = props => {
+const TabListItem: React.FC<chrome.tabs.Tab> = props => {
   const store = useContext(StoreContext);
 
   const [{ isDragging, draggingId }, dragRef] = useDrag({
-    item: { type: "tab", windowId: props.windowId, tabId: props.id },
+    item: { type: "tab", windowId: props.windowId, tabId: props.id, tabIndex: props.index },
     collect: monitor => ({
       isDragging: monitor.isDragging(),
       draggingId: props.id
@@ -93,7 +71,7 @@ const TabListItem: React.FC<Props> = props => {
     store.setIsDragging(isDragging);
   }, [isDragging]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const dropZoneProps = { windowId: props.windowId, tabIndex: props.index };
+  const dropZoneProps = { tabId: props.id, windowId: props.windowId, tabIndex: props.index };
 
   const style = cx(
     styles.default,
@@ -109,7 +87,7 @@ const TabListItem: React.FC<Props> = props => {
       return;
     }
 
-    chrome.tabs.update(props.id, { active: true });
+    browser.tabs.update(props.id, { active: true });
 
     // if the window has not been focused on last update,
     // focus window again to bring to front
@@ -120,8 +98,8 @@ const TabListItem: React.FC<Props> = props => {
       return;
     }
 
-    chrome.windows.update(props.windowId, { focused: true }, () => {
-      chrome.windows.update(POPUP_WINDOW_ID, { focused: true });
+    browser.windows.update(props.windowId, { focused: true }).then(() => {
+      browser.windows.update(POPUP_WINDOW_ID, { focused: true });
       lastFocusedWinId = props.windowId;
     });
   }, [props]);
@@ -130,21 +108,16 @@ const TabListItem: React.FC<Props> = props => {
   const onClick = useCallback(() => {
     // toggle highlight
     if (store.isShiftPressed && props.id) {
-      chrome.tabs.update(props.id, { highlighted: !props.highlighted });
-
-      const isHighlighting = props.windows.some(window => {
-        return window.tabs && window.tabs.filter(tab => tab.highlighted).length > 1;
-      });
-      store.setIsHighlighting(isHighlighting);
+      browser.tabs.update(props.id, { highlighted: !props.highlighted });
       return;
     }
 
     // focus window and close popup
-    chrome.windows.get(props.windowId, win => {
+    browser.windows.get(props.windowId).then(win => {
       if (win.focused) {
         return false;
       }
-      chrome.windows.update(props.windowId, { focused: true });
+      browser.windows.update(props.windowId, { focused: true });
     });
     setTimeout(window.close, 0);
   }, [props]);

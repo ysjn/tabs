@@ -1,6 +1,9 @@
 import { css, cx } from "emotion";
-import React from "react";
+import React, { useContext } from "react";
 import { DragObjectWithType, useDrop } from "react-dnd";
+import { browser } from "webextension-polyfill-ts";
+
+import { StoreContext } from "../StoreContext";
 
 const styles = {
   default: css`
@@ -25,6 +28,7 @@ const styles = {
 };
 
 interface Props {
+  tabId?: number;
   tabIndex: number;
   windowId: number;
   top?: boolean;
@@ -32,21 +36,55 @@ interface Props {
 }
 
 interface DragObject extends DragObjectWithType {
+  windowId: number;
   tabId: number;
+  tabIndex: number;
 }
 
 const DropZone: React.FC<Props> = props => {
+  const store = useContext(StoreContext);
   const [{ isOver }, drop] = useDrop({
     accept: "tab",
     drop: (item: DragObject) => {
-      chrome.tabs.move(item.tabId, {
-        windowId: props.windowId,
-        index: props.tabIndex
-      });
+      if (
+        (props.top && item.tabIndex - props.tabIndex === -1) ||
+        (props.bottom && item.tabIndex - props.tabIndex === 1)
+      ) {
+        return;
+      }
+
+      if (store.isHighlighting) {
+        browser.windows
+          .get(item.windowId, { populate: true })
+          .then(window => {
+            if (window.tabs === undefined || window.tabs.length === 0) {
+              return;
+            }
+            return window.tabs.filter(tab => tab.highlighted).map(tab => tab.id);
+          })
+          .then(tabIds => {
+            // browser.tabs.move(tabIds as number[], {
+            //   windowId: props.windowId,
+            //   index: props.tabIndex
+            // });
+            if (tabIds === undefined || tabIds.length === 0) {
+              return;
+            }
+            tabIds.map(id =>
+              browser.tabs.move(id as number, {
+                windowId: props.windowId,
+                index: props.tabIndex
+              })
+            );
+          });
+      } else {
+        browser.tabs.move(item.tabId, {
+          windowId: props.windowId,
+          index: props.tabIndex
+        });
+      }
     },
-    collect: monitor => ({
-      isOver: monitor.isOver()
-    })
+    collect: monitor => ({ isOver: monitor.isOver() })
   });
 
   const style = cx(
