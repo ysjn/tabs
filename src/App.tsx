@@ -25,7 +25,7 @@ const styles = {
     position: -webkit-sticky;
     position: sticky;
     top: 0;
-    padding: 10px;
+    padding: 8px 10px;
     background-color: var(--divider);
     font-size: 13px;
     z-index: 300;

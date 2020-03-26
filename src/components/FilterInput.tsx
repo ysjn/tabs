@@ -13,10 +13,10 @@ const styles = {
   `,
   input: css`
     width: 100%;
-    padding: 5px;
+    padding: 2px 5px;
     background-color: transparent;
-    color: var(--primary);
     border: none;
+    color: var(--primary);
 
     :focus {
       outline: none;

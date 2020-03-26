@@ -22,6 +22,7 @@ const styles = {
     position: relative;
     display: block;
     padding: 0 40px;
+    min-height: 51px;
     border-bottom: 1px solid var(--divider);
     cursor: pointer;
     list-style: none;
