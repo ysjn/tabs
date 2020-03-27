@@ -3,6 +3,7 @@ import React from "react";
 
 const style = css`
   display: flex;
+  padding: 0 5px;
   border-bottom: 1px solid var(--divider);
 `;
 
