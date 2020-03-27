@@ -22,6 +22,7 @@ const styles = {
     position: relative;
     display: block;
     padding: 0 40px;
+    min-height: 51px;
     border-bottom: 1px solid var(--divider);
     cursor: pointer;
     list-style: none;
@@ -102,7 +103,7 @@ const TabListItem: React.FC<chrome.tabs.Tab> = props => {
       browser.windows.update(POPUP_WINDOW_ID, { focused: true });
       lastFocusedWinId = props.windowId;
     });
-  }, [props]);
+  }, [props, store.isHighlighting, store.isShiftPressed, store.lastActiveWindowId]);
 
   // make clicked tab active
   const onClick = useCallback(() => {
@@ -120,12 +121,23 @@ const TabListItem: React.FC<chrome.tabs.Tab> = props => {
       browser.windows.update(props.windowId, { focused: true });
     });
     setTimeout(window.close, 0);
-  }, [props]);
+  }, [props, store.isShiftPressed]);
 
   return useObserver(() => {
     const isDraggingOther = store.isDragging && store.draggingId !== props.id;
+    if (props.url === undefined || props.title === undefined || props.url.match(POPUP_URL)) {
+      return null;
+    }
 
-    return props.url && props.url.match(POPUP_URL) ? null : (
+    const isFiltering = store.filterString !== "";
+    const isFilterMatch =
+      props.url.toLowerCase().indexOf(store.filterString) >= 0 ||
+      props.title.toLowerCase().indexOf(store.filterString) >= 0;
+    if (isFiltering && !isFilterMatch) {
+      return null;
+    }
+
+    return (
       <li className={style} onMouseEnter={onMouseEnter} ref={dragRef}>
         {isDraggingOther && <DropZone top {...dropZoneProps} />}
         <div onClick={onClick}>

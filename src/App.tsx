@@ -4,6 +4,8 @@ import { DndProvider } from "react-dnd";
 import Backend from "react-dnd-html5-backend";
 import { browser } from "webextension-polyfill-ts";
 
+import FilterInput from "./components/FilterInput";
+import Header from "./components/Header";
 import TabList from "./components/TabList";
 import { StoreContext } from "./StoreContext";
 
@@ -14,6 +16,7 @@ const styles = {
     line-height: 1.4;
     display: flex;
     flex-direction: column;
+    min-width: 150px;
     height: 100vh;
     overflow: auto;
     word-break: break-word;
@@ -22,7 +25,7 @@ const styles = {
     position: -webkit-sticky;
     position: sticky;
     top: 0;
-    padding: 10px;
+    padding: 8px 10px;
     background-color: var(--divider);
     font-size: 13px;
     z-index: 300;
@@ -143,10 +146,13 @@ const App: React.FC = () => {
       window => window.tabs && window.tabs.filter(tab => tab.highlighted).length >= 2
     );
     store.setIsHighlighting(isHighlighting);
-  }, [windows]);
+  }, [windows, store]);
 
   return (
     <div className={styles.app}>
+      <Header>
+        <FilterInput />
+      </Header>
       <DndProvider backend={Backend}>
         {windows.map((window, index) =>
           window.tabs === undefined ? null : (

@@ -34,7 +34,7 @@ browser.browserAction.onClicked.addListener(() => {
             type: "popup",
             top: 85,
             left: Math.round(win.left + win.width),
-            width: 400,
+            width: 350,
             get height() { return Math.round(screen.height - this.top * 2); },
           };
 
