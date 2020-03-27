@@ -6,6 +6,7 @@ import { browser } from "webextension-polyfill-ts";
 
 import FilterInput from "./components/FilterInput";
 import Header from "./components/Header";
+import Icon from "./components/Icon";
 import TabList from "./components/TabList";
 import { StoreContext } from "./StoreContext";
 
@@ -45,10 +46,21 @@ interface IIndexable {
   [key: string]: any;
 }
 
+interface windowMetrics {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
 let renderTimer: NodeJS.Timer;
+let previousWindowMetrics: windowMetrics[] = [];
 
 const App: React.FC = () => {
   const [windows, setWindows] = useState<chrome.windows.Window[]>([]);
+
+  const [isTileActive, setIsTileActive] = useState(false);
+  const [isOptionsActive, setIsOptionsActive] = useState(false);
 
   const getWindows = useCallback(
     (timeout: number = 100) => {
@@ -73,6 +85,36 @@ const App: React.FC = () => {
     },
     [store]
   );
+
+  const tileWindows = useCallback(() => {
+    if (!isTileActive) {
+      previousWindowMetrics = [];
+      browser.windows.getAll().then(windows =>
+        windows.map((browserWindow, index) => {
+          const width = Math.round(window.screen.width / windows.length);
+          const height = Math.round(window.screen.height);
+          previousWindowMetrics.push({
+            top: browserWindow.top!,
+            left: browserWindow.left!,
+            width: browserWindow.width!,
+            height: browserWindow.height!
+          });
+          browser.windows.update(browserWindow.id!, {
+            top: 0,
+            left: width * index,
+            width,
+            height
+          });
+        })
+      );
+    } else {
+      windows.map((window, index) => {
+        const { top, left, width, height } = previousWindowMetrics[index];
+        browser.windows.update(window.id, { top, left, width, height });
+      });
+    }
+    setIsTileActive(!isTileActive);
+  }, [windows, isTileActive]);
 
   const handleKeyDown = useCallback(
     event => {
@@ -152,6 +194,20 @@ const App: React.FC = () => {
     <div className={styles.app}>
       <Header>
         <FilterInput />
+        {windows.length >= 2 && (
+          <Icon
+            iconName="board"
+            title="temporary tile windows"
+            isActive={isTileActive}
+            onClick={tileWindows}
+          />
+        )}
+        <Icon
+          iconName="options"
+          title="options"
+          isActive={isOptionsActive}
+          onClick={() => setIsOptionsActive(!isOptionsActive)}
+        />
       </Header>
       <DndProvider backend={Backend}>
         {windows.map((window, index) =>
