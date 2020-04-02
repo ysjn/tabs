@@ -9,7 +9,7 @@ import { StoreContext } from "../StoreContext";
 const styles = {
   wrapper: css`
     flex: 1 0 auto;
-    padding: 10px;
+    padding: 10px 5px;
   `,
   input: css`
     width: 100%;
@@ -26,7 +26,6 @@ const styles = {
     display: flex;
     align-items: center;
     background-color: var(--divider);
-    border: 1px solid transparent;
     border-radius: 18px;
   `,
   icon: css`

@@ -6,6 +6,7 @@ import { browser } from "webextension-polyfill-ts";
 
 import FilterInput from "./components/FilterInput";
 import Header from "./components/Header";
+import Icon from "./components/Icon";
 import TabList from "./components/TabList";
 import { StoreContext } from "./StoreContext";
 
@@ -45,10 +46,22 @@ interface IIndexable {
   [key: string]: any;
 }
 
+interface windowMetrics {
+  id: number;
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
 let renderTimer: NodeJS.Timer;
+let previousWindowMetrics: windowMetrics[] = [];
 
 const App: React.FC = () => {
   const [windows, setWindows] = useState<chrome.windows.Window[]>([]);
+
+  const [isTileActive, setIsTileActive] = useState(false);
+  const [isOptionsActive, setIsOptionsActive] = useState(false);
 
   const getWindows = useCallback(
     (timeout: number = 100) => {
@@ -73,6 +86,91 @@ const App: React.FC = () => {
     },
     [store]
   );
+
+  const saveWindowPositions = () => {
+    previousWindowMetrics = [];
+    return browser.windows.getAll({ windowTypes: ["normal"] }).then(windows =>
+      windows.map(browserWindow =>
+        previousWindowMetrics.push({
+          id: browserWindow.id!,
+          top: browserWindow.top!,
+          left: browserWindow.left!,
+          width: browserWindow.width!,
+          height: browserWindow.height!
+        })
+      )
+    );
+  };
+
+  const restoreWindowPositions = () => {
+    previousWindowMetrics.map((browserWindow, index) => {
+      if (!browser.windows.get(browserWindow.id)) {
+        return;
+      }
+      const { top, left, width, height } = previousWindowMetrics[index];
+      browser.windows.update(browserWindow.id, { top, left, width, height });
+    });
+  };
+
+  const tileWindows = () => {
+    browser.windows.getAll({ windowTypes: ["normal"] }).then(windows => {
+      let width = Math.round(window.screen.width / windows.length);
+      const isGrid = width <= 500;
+      width = isGrid ? 500 : width;
+      let height = Math.round(window.screen.height);
+      const column = Math.floor(window.screen.width / width);
+      const row = Math.round(windows.length / column);
+      width = Math.round(window.screen.width / column);
+      height = isGrid ? Math.round(height / row) : height;
+
+      let currentCol = 0;
+      let currentRow = 0;
+      for (const browserWindow of windows) {
+        if (browserWindow.id === undefined) {
+          continue;
+        }
+
+        browser.windows.update(browserWindow.id, {
+          top: height * currentRow,
+          left: width * currentCol,
+          width,
+          height
+        });
+        if (currentCol + 1 === column) {
+          currentCol = 0;
+          currentRow++;
+        } else {
+          currentCol++;
+        }
+      }
+    });
+  };
+
+  const tileButtonHandler = useCallback(() => {
+    if (!isTileActive) {
+      if (previousWindowMetrics.length === 0) {
+        saveWindowPositions().then(() => tileWindows());
+      } else {
+        tileWindows();
+      }
+      setIsTileActive(true);
+    } else {
+      restoreWindowPositions();
+      setIsTileActive(false);
+    }
+  }, [windows, isTileActive, setIsTileActive]);
+
+  const handleOnWindowRemove = useCallback(() => {
+    if (!isTileActive) {
+      return;
+    }
+    if (windows.length <= 2) {
+      restoreWindowPositions();
+      setIsTileActive(false);
+    } else {
+      tileWindows();
+    }
+  }, [restoreWindowPositions, isTileActive, setIsTileActive, tileWindows]);
 
   const handleKeyDown = useCallback(
     event => {
@@ -128,18 +226,23 @@ const App: React.FC = () => {
 
     browserTabEvents.map(event => (browser.tabs as IIndexable)[event].addListener(getWindows));
     browser.windows.onRemoved.addListener(getWindows);
-    for (let k in windowEvents) {
+    for (const k in windowEvents) {
       window.addEventListener(k, (windowEvents as IIndexable)[k]);
     }
 
     return () => {
       browserTabEvents.map(event => (browser.tabs as IIndexable)[event].removeListener(getWindows));
       browser.windows.onRemoved.removeListener(getWindows);
-      for (let k in windowEvents) {
+      for (const k in windowEvents) {
         window.removeEventListener(k, (windowEvents as IIndexable)[k]);
       }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    browser.windows.onRemoved.addListener(handleOnWindowRemove);
+    return () => browser.windows.onRemoved.removeListener(handleOnWindowRemove);
+  }, [windows, isTileActive, setIsTileActive]);
 
   useEffect(() => {
     const isHighlighting = windows.some(
@@ -152,6 +255,22 @@ const App: React.FC = () => {
     <div className={styles.app}>
       <Header>
         <FilterInput />
+        {windows.length >= 2 && (
+          <Icon
+            iconName="display-grid"
+            title="temporary tile windows"
+            isActive={isTileActive}
+            onClick={tileButtonHandler}
+          />
+        )}
+        {/*
+        <Icon
+          iconName="options"
+          title="options"
+          isActive={isOptionsActive}
+          onClick={() => setIsOptionsActive(!isOptionsActive)}
+        />
+        */}
       </Header>
       <DndProvider backend={Backend}>
         {windows.map((window, index) =>
