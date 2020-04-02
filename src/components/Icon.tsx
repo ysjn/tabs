@@ -1,9 +1,9 @@
-import "css.gg/icons/board.css";
 import "css.gg/icons/close.css";
+import "css.gg/icons/display-grid.css";
 import "css.gg/icons/options.css";
 import "css.gg/icons/search.css";
 import { css, cx } from "emotion";
-import React, { useCallback, useContext, useEffect } from "react";
+import React from "react";
 
 const styles = {
   default: css`

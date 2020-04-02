@@ -47,6 +47,7 @@ interface IIndexable {
 }
 
 interface windowMetrics {
+  id: number;
   top: number;
   left: number;
   width: number;
@@ -86,35 +87,90 @@ const App: React.FC = () => {
     [store]
   );
 
-  const tileWindows = useCallback(() => {
-    if (!isTileActive) {
-      previousWindowMetrics = [];
-      browser.windows.getAll().then(windows =>
-        windows.map((browserWindow, index) => {
-          const width = Math.round(window.screen.width / windows.length);
-          const height = Math.round(window.screen.height);
-          previousWindowMetrics.push({
-            top: browserWindow.top!,
-            left: browserWindow.left!,
-            width: browserWindow.width!,
-            height: browserWindow.height!
-          });
-          browser.windows.update(browserWindow.id!, {
-            top: 0,
-            left: width * index,
-            width,
-            height
-          });
+  const saveWindowPositions = () => {
+    previousWindowMetrics = [];
+    return browser.windows.getAll({ windowTypes: ["normal"] }).then(windows =>
+      windows.map(browserWindow =>
+        previousWindowMetrics.push({
+          id: browserWindow.id!,
+          top: browserWindow.top!,
+          left: browserWindow.left!,
+          width: browserWindow.width!,
+          height: browserWindow.height!
         })
-      );
+      )
+    );
+  };
+
+  const restoreWindowPositions = () => {
+    previousWindowMetrics.map((browserWindow, index) => {
+      if (!browser.windows.get(browserWindow.id)) {
+        return;
+      }
+      const { top, left, width, height } = previousWindowMetrics[index];
+      browser.windows.update(browserWindow.id, { top, left, width, height });
+    });
+  };
+
+  const tileWindows = () => {
+    browser.windows.getAll({ windowTypes: ["normal"] }).then(windows => {
+      let width = Math.round(window.screen.width / windows.length);
+      const isGrid = width <= 500;
+      width = isGrid ? 500 : width;
+      let height = Math.round(window.screen.height);
+      const column = Math.floor(window.screen.width / width);
+      const row = Math.round(windows.length / column);
+      width = Math.round(window.screen.width / column);
+      height = isGrid ? Math.round(height / row) : height;
+
+      let currentCol = 0;
+      let currentRow = 0;
+      for (const browserWindow of windows) {
+        if (browserWindow.id === undefined) {
+          continue;
+        }
+
+        browser.windows.update(browserWindow.id, {
+          top: height * currentRow,
+          left: width * currentCol,
+          width,
+          height
+        });
+        if (currentCol + 1 === column) {
+          currentCol = 0;
+          currentRow++;
+        } else {
+          currentCol++;
+        }
+      }
+    });
+  };
+
+  const tileButtonHandler = useCallback(() => {
+    if (!isTileActive) {
+      if (previousWindowMetrics.length === 0) {
+        saveWindowPositions().then(() => tileWindows());
+      } else {
+        tileWindows();
+      }
+      setIsTileActive(true);
     } else {
-      windows.map((window, index) => {
-        const { top, left, width, height } = previousWindowMetrics[index];
-        browser.windows.update(window.id, { top, left, width, height });
-      });
+      restoreWindowPositions();
+      setIsTileActive(false);
     }
-    setIsTileActive(!isTileActive);
-  }, [windows, isTileActive]);
+  }, [windows, isTileActive, setIsTileActive]);
+
+  const handleOnWindowRemove = useCallback(() => {
+    if (!isTileActive) {
+      return;
+    }
+    if (windows.length <= 2) {
+      restoreWindowPositions();
+      setIsTileActive(false);
+    } else {
+      tileWindows();
+    }
+  }, [restoreWindowPositions, isTileActive, setIsTileActive, tileWindows]);
 
   const handleKeyDown = useCallback(
     event => {
@@ -170,18 +226,23 @@ const App: React.FC = () => {
 
     browserTabEvents.map(event => (browser.tabs as IIndexable)[event].addListener(getWindows));
     browser.windows.onRemoved.addListener(getWindows);
-    for (let k in windowEvents) {
+    for (const k in windowEvents) {
       window.addEventListener(k, (windowEvents as IIndexable)[k]);
     }
 
     return () => {
       browserTabEvents.map(event => (browser.tabs as IIndexable)[event].removeListener(getWindows));
       browser.windows.onRemoved.removeListener(getWindows);
-      for (let k in windowEvents) {
+      for (const k in windowEvents) {
         window.removeEventListener(k, (windowEvents as IIndexable)[k]);
       }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    browser.windows.onRemoved.addListener(handleOnWindowRemove);
+    return () => browser.windows.onRemoved.removeListener(handleOnWindowRemove);
+  }, [windows, isTileActive, setIsTileActive]);
 
   useEffect(() => {
     const isHighlighting = windows.some(
@@ -196,18 +257,20 @@ const App: React.FC = () => {
         <FilterInput />
         {windows.length >= 2 && (
           <Icon
-            iconName="board"
+            iconName="display-grid"
             title="temporary tile windows"
             isActive={isTileActive}
-            onClick={tileWindows}
+            onClick={tileButtonHandler}
           />
         )}
+        {/*
         <Icon
           iconName="options"
           title="options"
           isActive={isOptionsActive}
           onClick={() => setIsOptionsActive(!isOptionsActive)}
         />
+        */}
       </Header>
       <DndProvider backend={Backend}>
         {windows.map((window, index) =>
