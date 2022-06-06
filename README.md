@@ -3,7 +3,7 @@
 Experimental tab manager extension for Chrome.<br />
 Aimed to improve UX for tab management and archive better overview of tabs information.
 
-![](sample_images/cover.png)
+<img src="sample_images/cover.png" alt="Cover image for tabs chrome extension" width="100%" />
 
 ## Features
 
@@ -16,13 +16,13 @@ Aimed to improve UX for tab management and archive better overview of tabs infor
 ## Usage
 
 Hover to preview tabs.<br />
-![](sample_images/basic_usage.gif)
+<img src="sample_images/basic_usage.gif" alt="Hover to preview tabs" width="100%" />
 
 Click on [x] to close tabs.<br />
-![](sample_images/close_tabs.gif)
+<img src="sample_images/close_tabs.gif" alt="Click on [x] to close tabs" width="100%" />
 
 Multiple windows support.<br />
-![](sample_images/multiple_window.gif)
+<img src="sample_images/multiple_window.gif" alt="Multiple windows support" width="100%" />
 
 Grid (or column) layout for multiple windows overview.<br />
-![](sample_images/multiple_window_grid.gif)
+<img src="sample_images/multiple_window_grid.gif" alt="Grid (or column) layout for multiple windows overview" width="100%" />
